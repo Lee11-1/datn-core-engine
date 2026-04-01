@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('reflect-metadata');
 const { DataSource } = require('typeorm');
 const mongoose = require('mongoose');
 const Redis = require('ioredis');
@@ -73,7 +74,7 @@ const s3 = new AWS.S3({
 
 const S3_BUCKET = process.env.S3_BUCKET_NAME;
 
-// S3 Helper functions
+
 const s3Helper = {
   /**
    * Upload file to S3
@@ -142,9 +143,7 @@ const s3Helper = {
   },
 };
 
-// ============================================================
-// Export
-// ============================================================
+
 module.exports = {
   AppDataSource,
   mongoose,

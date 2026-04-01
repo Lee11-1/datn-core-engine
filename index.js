@@ -1,4 +1,5 @@
 require("dotenv").config({ path: ".localenv" });
+require("reflect-metadata");
 const glob = require("glob");
 const Koa = require("koa");
 const cors = require("@koa/cors");
@@ -26,34 +27,37 @@ app.use(
 
 app.use(log);
 
-// Initialize TypeORM
-initializeDatabase()
-  .then(() => {
+// Initialize TypeORM and bootstrap routes
+async function startServer() {
+  try {
+    await initializeDatabase();
     console.log('✅ TypeORM initialized');
-  })
-  .catch(err => {
-    console.error('❌ TypeORM initialization failed:', err.message);
-  });
 
-// bootstrap routes
-glob(`${__dirname}/routes/*.js`, { ignore: "**/index.js" }, (err, matches) => {
-  if (err) {
-    throw err;
+    // Load routes after database is initialized
+    glob(`${__dirname}/routes/*.js`, { ignore: "**/index.js" }, (err, matches) => {
+      if (err) {
+        throw err;
+      }
+
+      matches.forEach((file) => {
+        const controller = require(file);
+        app.use(controller.routes()).use(controller.allowedMethods());
+      });
+
+      const httpServer = createServer(app.callback());
+      initSocket(httpServer);
+      
+      httpServer.listen(config.port, () => {
+        console.log(`✅ Server is running on port ${config.port}`);
+        console.log(`✅ Koa (HTTP) and Socket.IO (WebSocket) are sharing the same port.`);
+      });
+    });
+  } catch (err) {
+    console.error('❌ Server startup failed:', err.message);
+    process.exit(1);
   }
+}
 
-  matches.forEach((file) => {
-    const controller = require(file); // eslint-disable-line
-    app.use(controller.routes()).use(controller.allowedMethods());
-  });
-});
-
-
-const httpServer = createServer(app.callback());
-initSocket(httpServer);
 if (!module.parent) {
-  httpServer.listen(config.port, async () => {
-    console.log(`✅ Server is running on port ${config.port}`);
-    console.log(`✅ Koa (HTTP) and Socket.IO (WebSocket) are sharing the same port.`);
-    
-  });
+  startServer();
 }

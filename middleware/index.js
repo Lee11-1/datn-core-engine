@@ -47,6 +47,20 @@ async function authorize(ctx, next) {
   }
 }
 
+const authorizeRole = (roles) => {
+  return async (ctx, next) => {
+    const user = ctx.User;
+    
+    if (!user || !roles.includes(user.role)) {
+      ctx.status = 403;
+      ctx.body = { code: 'FORBIDDEN', message: 'Bạn không có quyền thực hiện chức năng này' };
+      return;
+    }
+    
+    await next();
+  };
+};
+
 async function log(ctx, next) {
   let error = null;
   ctx.request.id = uuid().replace(/-/g, ""); // because hyphen sucks
@@ -112,4 +126,5 @@ async function log(ctx, next) {
 module.exports = {
   authorize,
   log,
+  authorizeRole,
 };

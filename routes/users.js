@@ -1,13 +1,14 @@
 const Router = require('koa-router');
 const userController = require('../controller/userController');
+const { authorize, authorizeRole } = require('../middleware');
 
 const router = new Router({
   prefix: '/api/users'
 });
 
-router.post('/', userController.createUser.bind(userController));
+router.post('/',authorize, userController.createUser.bind(userController));
 
-router.get('/', userController.getUsers.bind(userController));
+router.get('/', authorize, authorizeRole(['admin']), userController.getUsers.bind(userController));
 
 router.get('/:id', userController.getUserById.bind(userController));
 
