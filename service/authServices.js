@@ -23,7 +23,7 @@ class AuthService {
       throw new Error('User account is not active');
     }
 
-    const accessToken = jwt.sign(
+    const access_token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '6h' }
@@ -42,7 +42,7 @@ class AuthService {
     const { passwordHash: _, ...userResponse } = user;
 
     return {
-      accessToken,
+      access_token,
       refreshToken: refreshTokenString,
       user: userResponse,
     };
@@ -66,14 +66,14 @@ class AuthService {
       throw new Error('User is no longer active');
     }
 
-    const accessToken = jwt.sign(
+    const access_token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '6h' }
     );
 
     return {
-      accessToken,
+      access_token,
       user: { id: user.id, username: user.username, email: user.email },
     };
   }

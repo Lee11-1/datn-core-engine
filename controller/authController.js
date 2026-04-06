@@ -8,9 +8,7 @@ class AuthController {
 
       ctx.status = 200;
       ctx.body = {
-        success: true,
-        message: 'Login successful',
-        data: result,
+        data: result
       };
     } catch (error) {
       ctx.status = 401;
