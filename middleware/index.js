@@ -1,7 +1,7 @@
 const _ = require("lodash");
 const uuid = require("uuid/v4");
 const jwt = require("jsonwebtoken");
-require("dotenv").config({ path: ".localenv" });
+require("dotenv").config();
 
 const loggingMethod = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 const loggingPathIgnore = ["/login", "/api-logs-database", "/api-logs"];
