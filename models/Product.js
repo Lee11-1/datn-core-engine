@@ -52,7 +52,7 @@ module.exports = new EntitySchema({
       nullable: true,
     },
     images: {
-      type: 'simple-array',
+      type: 'json',
       nullable: true,
     },
     mongoDetailId: {

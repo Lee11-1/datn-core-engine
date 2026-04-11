@@ -35,29 +35,14 @@ class ProductService {
   }
 
   async getProducts(query) {
-    const { page = 1, limit = 10, categoryId, isActive = true, search } = query;
+    const { page = 1, limit = 10, categoryId, search } = query;
     const productRepo = getRepository('Product');
-
-    const where = {};
-    if (isActive !== 'all') {
-      where.isActive = isActive === 'true' ? true : false;
-    }
-    if (categoryId) {
-      where.categoryId = categoryId;
-    }
 
     let queryBuilder = productRepo.createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category');
 
-    // Apply filters
-    if (isActive !== 'all') {
-      queryBuilder = queryBuilder.where('product.isActive = :isActive', { 
-        isActive: isActive === 'true' ? true : false 
-      });
-    }
-
     if (categoryId) {
-      queryBuilder = queryBuilder.andWhere('product.categoryId = :categoryId', { categoryId });
+      queryBuilder = queryBuilder.where('product.categoryId = :categoryId', { categoryId });
     }
 
     if (search) {
@@ -67,7 +52,6 @@ class ProductService {
       );
     }
 
-    // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [products, total] = await queryBuilder
       .orderBy('product.createdAt', 'DESC')
