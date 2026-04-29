@@ -26,13 +26,13 @@ module.exports = new EntitySchema({
       name: 'scheduled_date',
       type: 'date',
     },
-    startTime: {
-      name: 'start_time',
-      type: 'time',
+    startDate: {
+      name: 'start_date',
+      type: 'date',
     },
-    endTime: {
-      name: 'end_time',
-      type: 'time',
+    endDate: {
+      name: 'end_date',
+      type: 'date',
     },
     status: {
       type: 'enum',

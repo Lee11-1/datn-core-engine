@@ -2,7 +2,7 @@ const { getRepository } = require('../config/typeorm');
 
 class CustomerService {
   async createCustomer(customerData) {
-    const { fullName, phone, email, address, location, zoneId, addedBy, note } = customerData;
+    const { fullName, phone, email, address, location, zoneId, createdBy, note } = customerData;
 
     if (!fullName) {
       throw new Error('Missing required field: fullName');
@@ -27,7 +27,7 @@ class CustomerService {
       address: address || null,
       location: location || null,
       zoneId: zoneId || null,
-      addedBy: addedBy || null,
+      createdBy: createdBy || null,
       note: note || null,
     });
 
@@ -74,7 +74,7 @@ class CustomerService {
     const customerRepo = getRepository('Customer');
     const customer = await customerRepo.findOne({
       where: { id },
-      relations: ['zone', 'addedByUser'],
+      relations: ['zone', 'createdByUser'],
     });
 
     if (!customer) {
@@ -136,7 +136,7 @@ class CustomerService {
     return await customerRepo
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.zone', 'zone')
-      .leftJoinAndSelect('customer.addedByUser', 'addedByUser')
+      .leftJoinAndSelect('customer.createdByUser', 'createdByUser')
       .where(
         '(customer.fullName ILIKE :keyword OR customer.phone ILIKE :keyword OR customer.email ILIKE :keyword)',
         { keyword: `%${keyword}%` }
@@ -150,7 +150,7 @@ class CustomerService {
     const customerRepo = getRepository('Customer');
     const [customers, total] = await customerRepo.findAndCount({
       where: { zoneId },
-      relations: ['zone', 'addedByUser'],
+      relations: ['zone', 'createdByUser'],
       take: limit,
       skip: offset,
       order: { createdAt: 'DESC' },
@@ -162,8 +162,8 @@ class CustomerService {
   async getCustomersByUser(userId, limit = 50, offset = 0) {
     const customerRepo = getRepository('Customer');
     const [customers, total] = await customerRepo.findAndCount({
-      where: { addedBy: userId },
-      relations: ['zone', 'addedByUser'],
+      where: { createdBy: userId },
+      relations: ['zone', 'createdByUser'],
       take: limit,
       skip: offset,
       order: { createdAt: 'DESC' },
@@ -176,7 +176,7 @@ class CustomerService {
     const customerRepo = getRepository('Customer');
     return await customerRepo.findOne({
       where: { phone },
-      relations: ['zone', 'addedByUser'],
+      relations: ['zone', 'createdByUser'],
     });
   }
 
@@ -184,7 +184,7 @@ class CustomerService {
     const customerRepo = getRepository('Customer');
     return await customerRepo.findOne({
       where: { email },
-      relations: ['zone', 'addedByUser'],
+      relations: ['zone', 'createdByUser'],
     });
   }
 }

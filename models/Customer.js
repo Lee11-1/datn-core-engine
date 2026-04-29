@@ -40,7 +40,7 @@ module.exports = new EntitySchema({
       type: 'uuid',
       nullable: true,
     },
-    addedBy: {
+    createdBy: {
       name: 'added_by',
       type: 'uuid',
       nullable: true,
@@ -67,7 +67,7 @@ module.exports = new EntitySchema({
       joinColumn: { name: 'zone_id' },
       nullable: true,
     },
-    addedByUser: {
+    createdByUser: {
       type: 'many-to-one',
       target: 'User',
       joinColumn: { name: 'added_by' },
