@@ -1,6 +1,19 @@
 const { getRepository } = require('../config/typeorm');
+const turf = require('@turf/turf');
 
 class ZoneService {
+
+  reformatGeometry(geometry) {
+    if (!geometry) return null;
+    try {
+      let geom = typeof geometry === 'string' ? JSON.parse(geometry) : geometry;
+      const buffered = turf.buffer(geom, 0);
+      return buffered.geometry;
+    } catch (error) {
+      console.warn('Could not reformat geometry:', error.message);
+      return geometry; 
+    }
+  }
   async createZone(zoneData) {
     const { name, nameEn, code, level, boundary, areaKm2, parentId, source, sourceVersion, customNote } = zoneData;
 
@@ -40,7 +53,7 @@ class ZoneService {
       nameEn: nameEn || null,
       code: code || null,
       level,
-      boundary: boundary || null,
+      boundary: boundary ? this.reformatGeometry(boundary) : null,
       areaKm2: areaKm2 || null,
       parentId: parentId || null,
       source: source || 'gadm',
@@ -53,7 +66,7 @@ class ZoneService {
   }
 
   async getZones(query) {
-    const {search_text, page = 1, limit = 10, level, parentId, isActive = 'true', source, includeGeometry = 'false' } = query;
+    const {search_text, page = 1, limit = 10, level, parentId, isActive = 'true', source, includeGeometry = 'true' } = query;
     const zoneRepo = getRepository('Zone');
     const includeGeomData = includeGeometry === 'true';
 
@@ -61,7 +74,6 @@ class ZoneService {
       .leftJoinAndSelect('zone.parent', 'parent')
       .leftJoinAndSelect('zone.children', 'children');
 
-    // Exclude geometry columns by default for faster queries
     if (!includeGeomData) {
       queryBuilder = queryBuilder.select([
         'zone.id',
@@ -83,6 +95,7 @@ class ZoneService {
         'children.id',
         'children.name',
         'children.code',
+        'children.boundary',
       ]);
     }
 
@@ -255,7 +268,7 @@ class ZoneService {
     if (nameEn !== undefined) zone.nameEn = nameEn;
     if (code !== undefined) zone.code = code;
     if (level) zone.level = level;
-    if (boundary !== undefined) zone.boundary = boundary;
+    if (boundary !== undefined) zone.boundary = boundary ? this.reformatGeometry(boundary) : null;
     if (areaKm2 !== undefined) zone.areaKm2 = areaKm2;
     if (parentId !== undefined) zone.parentId = parentId || null;
     if (source) zone.source = source;
@@ -589,7 +602,7 @@ class ZoneService {
             existingZone.name = name;
             if (nameEn) existingZone.nameEn = nameEn;
             if (level) existingZone.level = level;
-            if (boundary) existingZone.boundary = boundary;
+            if (boundary) existingZone.boundary = this.reformatGeometry(boundary);
             if (areaKm2 !== undefined) existingZone.areaKm2 = areaKm2;
             if (parentId !== null) existingZone.parentId = parentId;
             existingZone.source = 'gadm';
@@ -604,7 +617,7 @@ class ZoneService {
               nameEn: nameEn || null,
               code,
               level,
-              boundary: boundary || null,
+              boundary: boundary ? this.reformatGeometry(boundary) : null,
               areaKm2: areaKm2 || null,
               parentId: parentId || null,
               source: 'gadm',

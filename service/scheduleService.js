@@ -94,26 +94,22 @@ class ScheduleService {
       }
     }
 
-    const schedules = validDates.map(scheduledDate => 
-      scheduleRepo.create({
-        userId,
-        zoneId,
-        warehouseId: warehouseId || null,
-        startDate,
-        endDate,
-        status: status || 'planned',
-        note: note || null,
-        createdBy,
-      })
-    );
-
-    // Save all schedules
-    const savedSchedules = await scheduleRepo.save(schedules);
+    const schedule =  scheduleRepo.create({
+                            userId,
+                            zoneId,
+                            warehouseId: warehouseId || null,
+                            startDate,
+                            endDate,
+                            status: status || 'planned',
+                            note: note || null,
+                            createdBy,
+                        })
+    
+    const savedSchedule = await scheduleRepo.save(schedule);
     
     return {
       success: true,
-      count: savedSchedules.length,
-      schedules: savedSchedules,
+      schedule: savedSchedule,
     };
   }
 
@@ -133,15 +129,14 @@ class ScheduleService {
       relations: ['user', 'zone', 'warehouse', 'creator'],
       take: parseInt(limit),
       skip: (parseInt(page) - 1) * parseInt(limit),
-      order: { scheduledDate: 'DESC', startTime: 'ASC' },
+      order: { startDate: 'ASC' },
       select: {
         id: true,
         userId: true,
         zoneId: true,
         warehouseId: true,
-        scheduledDate: true,
-        startTime: true,
-        endTime: true,
+        startDate: true,
+        endDate: true,
         status: true,
         note: true,
         createdBy: true,
@@ -150,7 +145,7 @@ class ScheduleService {
         user: { id: true, username: true, fullName: true },
         zone: { id: true, name: true },
         warehouse: { id: true, name: true },
-        creator: { id: true, username: true, fullName: true },
+        title: true
       }
     });
 
@@ -205,7 +200,6 @@ class ScheduleService {
       throw new Error('Schedule not found');
     }
 
-    // Validate updates
     if (updates.startTime && updates.endTime) {
       if (!this.isValidTimeFormat(updates.startTime) || !this.isValidTimeFormat(updates.endTime)) {
         throw new Error('Invalid time format. Use HH:mm:ss format');
@@ -240,7 +234,6 @@ class ScheduleService {
       }
     }
 
-    // Validate relationships if updating
     if (updates.userId) {
       const userRepo = getRepository('User');
       const user = await userRepo.findOne({ where: { id: updates.userId } });

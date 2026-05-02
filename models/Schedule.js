@@ -57,6 +57,10 @@ module.exports = new EntitySchema({
       type: 'timestamptz',
       updateDate: true,
     },
+    title: {
+      type: 'text',
+      nullable: true,
+    }
   },
   relations: {
     user: {
@@ -79,7 +83,8 @@ module.exports = new EntitySchema({
       type: 'many-to-one',
       target: 'User',
       joinColumn: { name: 'created_by' },
-    },
+    }
+
   },
   indices: [
     { columns: ['userId'] },
