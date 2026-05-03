@@ -177,6 +177,25 @@ class InventoryController {
     }
   }
 
+  async deleteInventory(ctx) {
+    try {
+      const { id, userId } = ctx.request.query;
+      const result = await inventoryService.deleteInventory(id, userId);
+
+      ctx.status = 200;
+      ctx.body = {
+        success: true,
+        message: result.message,
+      };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   /**
    * Update inventory record
    */

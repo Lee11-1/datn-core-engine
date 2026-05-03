@@ -252,6 +252,34 @@ class InventoryService {
     }
   }
 
+  async deleteInventory(inventoryId, userId) {
+    try {
+      const inventoryRepository = getRepository(Inventory);
+      const inventory = await inventoryRepository.findOne({ where: { id: inventoryId } });
+
+      if (!inventory) {
+        throw new Error('Inventory not found');
+      }
+
+      await inventoryRepository.remove(inventory);
+
+      await this.logInventoryActivity(
+        'DELETE',
+        inventory.productId,
+        inventory.warehouseId,
+        inventory.quantity,
+        userId
+      );
+
+      return {
+        success: true,
+        message: 'Inventory deleted successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   /**
    * Release reserved quantity (used when order is cancelled)
    */

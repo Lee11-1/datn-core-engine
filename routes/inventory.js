@@ -9,6 +9,8 @@ router.get('/:id', inventoryController.getInventoryById);
 
 router.put('/:id', inventoryController.updateInventory);
 
+router.delete('/', inventoryController.deleteInventory);
+
 router.post('/check-availability', inventoryController.checkAvailableQuantity);
 
 router.post('/reserve', inventoryController.reserveQuantity);
