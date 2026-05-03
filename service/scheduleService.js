@@ -276,7 +276,6 @@ class ScheduleService {
   async getSchedulesByUser(userId, query = {}) {
     const { page = 1, limit = 10, status, fromDate, toDate } = query;
     const scheduleRepo = getRepository('Schedule');
-
     const where = { userId };
     if (status) where.status = status;
 
@@ -297,13 +296,10 @@ class ScheduleService {
 
     queryBuilder.leftJoinAndSelect('schedule.user', 'user')
       .leftJoinAndSelect('schedule.zone', 'zone')
-      .leftJoinAndSelect('schedule.warehouse', 'warehouse')
-      .leftJoinAndSelect('schedule.creator', 'creator')
-      .orderBy('schedule.scheduledDate', 'DESC')
-      .addOrderBy('schedule.startTime', 'ASC')
+      .addOrderBy('schedule.startDate', 'ASC')
       .take(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
-
+    
     const [schedules, total] = await queryBuilder.getManyAndCount();
 
     return {

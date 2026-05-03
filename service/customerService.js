@@ -146,17 +146,27 @@ class CustomerService {
       .getMany();
   }
 
-  async getCustomersByZone(zoneId, limit = 50, offset = 0) {
+  async getCustomersByZone(query) {
+    const { page = 1, limit = 10, zoneId } = query;
+
     const customerRepo = getRepository('Customer');
     const [customers, total] = await customerRepo.findAndCount({
       where: { zoneId },
       relations: ['zone', 'createdByUser'],
       take: limit,
-      skip: offset,
+      skip: (page - 1) * limit,
       order: { createdAt: 'DESC' },
     });
 
-    return { customers, total };
+    return {
+      customers,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+     };
   }
 
   async getCustomersByUser(userId, limit = 50, offset = 0) {

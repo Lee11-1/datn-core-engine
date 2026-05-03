@@ -132,14 +132,7 @@ class CustomerController {
 
   async getCustomersByZone(ctx) {
     try {
-      const { zoneId } = ctx.params;
-      const { limit = 50, offset = 0 } = ctx.query;
-
-      const result = await customerService.getCustomersByZone(
-        zoneId,
-        parseInt(limit),
-        parseInt(offset)
-      );
+      const result = await customerService.getCustomersByZone(  ctx.query );
 
       ctx.body = {
         success: true,

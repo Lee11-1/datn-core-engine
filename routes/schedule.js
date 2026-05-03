@@ -24,7 +24,7 @@ router.get('/date/:date', scheduleController.getSchedulesByDate.bind(scheduleCon
 router.get('/zone/:zoneId', scheduleController.getSchedulesByZone.bind(scheduleController));
 
 // Get schedules by user
-router.get('/user/:userId', scheduleController.getSchedulesByUser.bind(scheduleController));
+router.get('/user', scheduleController.getSchedulesByUser.bind(scheduleController));
 
 // Get schedule by ID
 router.get('/:id', scheduleController.getScheduleById.bind(scheduleController));

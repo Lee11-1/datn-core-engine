@@ -118,8 +118,8 @@ class ScheduleController {
 
   async getSchedulesByUser(ctx) {
     try {
-      const { userId } = ctx.params;
-      const result = await scheduleService.getSchedulesByUser(userId, ctx.query);
+      const { userId } = ctx.request.query;
+      const result = await scheduleService.getSchedulesByUser(userId, ctx.request.query);
 
       ctx.body = {
         success: true,
