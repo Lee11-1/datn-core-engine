@@ -76,10 +76,10 @@ class OrderController {
     }
   }
 
-  async getOrdersByCustomer(ctx) {
+  async getOrdersByUser(ctx) {
     try {
-      const { customerId, scheduleId } = ctx.params;
-      const orders = await orderService.getOrdersByCustomer(customerId, scheduleId);
+      const { userId } = ctx.params;
+      const orders = await orderService.getOrdersByUser(userId);
 
       ctx.body = {
         success: true,

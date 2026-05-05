@@ -150,7 +150,7 @@ class OrderService {
     return orders;
   }
 
-  async getOrdersByCustomer(customerId, scheduleId = null) {
+  async getOrdersByUser(userId) {
     const orderRepo = getRepository('Order');
 
     let query = orderRepo.createQueryBuilder('order')
@@ -158,11 +158,9 @@ class OrderService {
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.customer', 'customer')
       .leftJoinAndSelect('order.items', 'items')
-      .where('order.customerId = :customerId', { customerId });
+      .where('order.userId = :userId', { userId });
 
-    if (scheduleId) {
-      query = query.andWhere('session.scheduleId = :scheduleId', { scheduleId });
-    }
+   
 
     const orders = await query.orderBy('order.createdAt', 'DESC').getMany();
 

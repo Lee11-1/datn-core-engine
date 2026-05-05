@@ -18,13 +18,9 @@ router.get('/schedule/:scheduleId', orderController.getOrdersBySchedule.bind(ord
 // Get orders by session
 router.get('/session/:sessionId', orderController.getOrdersBySession.bind(orderController));
 
-// Get orders by customer (with optional scheduleId)
-router.get('/customer/:customerId', orderController.getOrdersByCustomer.bind(orderController));
+// Get orders by user (with optional scheduleId)
+router.get('/user/:userId', orderController.getOrdersByUser.bind(orderController));
 
-// Get orders by customer and schedule
-router.get('/customer/:customerId/schedule/:scheduleId', orderController.getOrdersByCustomer.bind(orderController));
-
-// Get order detail
 router.get('/:orderId', orderController.getOrderDetail.bind(orderController));
 
 // Update order status
