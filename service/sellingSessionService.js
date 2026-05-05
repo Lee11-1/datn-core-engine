@@ -147,7 +147,6 @@ class SellingSessionService {
 
     const updatedSession = await sessionRepo.save(session);
 
-    // Reload with relations
     const sessionWithRelations = await sessionRepo.findOne({
       where: { id: updatedSession.id },
       relations: ['schedule', 'user', 'customer'],

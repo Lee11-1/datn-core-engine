@@ -61,7 +61,6 @@ class OrderService {
 
     const savedOrder = await orderRepo.save(order);
 
-    // Create order items
     const orderItemRepo = getRepository('OrderItem');
     for (const item of items) {
       const orderItem = orderItemRepo.create({
@@ -76,7 +75,6 @@ class OrderService {
       await orderItemRepo.save(orderItem);
     }
 
-    // Reload order with items
     const orderWithItems = await orderRepo.findOne({
       where: { id: savedOrder.id },
       relations: ['session', 'user', 'customer', 'items'],
