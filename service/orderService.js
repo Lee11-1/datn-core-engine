@@ -77,7 +77,7 @@ class OrderService {
 
     const orderWithItems = await orderRepo.findOne({
       where: { id: savedOrder.id },
-      relations: ['session', 'user', 'customer', 'items'],
+      relations: ['session', 'user', 'customer', 'items', 'items.product'],
     });
 
     return orderWithItems;
@@ -95,7 +95,7 @@ class OrderService {
 
     const [orders, total] = await orderRepo.findAndCount({
       where,
-      relations: ['session', 'user', 'customer', 'items'],
+      relations: [ 'customer'],
       take: parseInt(limit),
       skip: (parseInt(page) - 1) * parseInt(limit),
       order: { createdAt: 'DESC' },
@@ -121,6 +121,7 @@ class OrderService {
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.customer', 'customer')
       .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
       .where('session.scheduleId = :scheduleId', { scheduleId })
       .take(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
@@ -143,28 +144,34 @@ class OrderService {
 
     const orders = await orderRepo.find({
       where: { sessionId },
-      relations: ['session', 'user', 'customer', 'items'],
+      relations: ['session', 'user', 'customer', 'items', 'items.product'],
       order: { createdAt: 'DESC' },
     });
 
     return orders;
   }
 
-  async getOrdersByUser(userId) {
+  async getOrdersByUser(userId, queryParams = {}) {
+    const { page = 1, limit = 10 } = queryParams;
     const orderRepo = getRepository('Order');
 
-    let query = orderRepo.createQueryBuilder('order')
-      .leftJoinAndSelect('order.session', 'session')
-      .leftJoinAndSelect('order.user', 'user')
+    const [orders, total] = await orderRepo.createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
-      .leftJoinAndSelect('order.items', 'items')
-      .where('order.userId = :userId', { userId });
+      .where('order.userId = :userId', { userId })
+      .take(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .orderBy('order.createdAt', 'DESC')
+      .getManyAndCount();
 
-   
-
-    const orders = await query.orderBy('order.createdAt', 'DESC').getMany();
-
-    return orders;
+    return {
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    };
   }
 
   async getOrderDetail(orderId) {
@@ -172,7 +179,7 @@ class OrderService {
 
     const order = await orderRepo.findOne({
       where: { id: orderId },
-      relations: ['session', 'user', 'customer', 'items', 'warehouse', 'approver'],
+      relations: ['session', 'user', 'customer', 'items', 'items.product', 'warehouse', 'approver'],
     });
 
     if (!order) {
