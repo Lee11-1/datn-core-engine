@@ -39,6 +39,24 @@ class OrderController {
     }
   }
 
+  async getOrderItems(ctx){
+    try {
+      const { orderId } = ctx.params;
+      const items = await orderService.getOrderItems(orderId);
+
+      ctx.body = {
+        success: true,
+        data: items,
+      };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   async getOrdersBySchedule(ctx) {
     try {
       const { scheduleId } = ctx.params;

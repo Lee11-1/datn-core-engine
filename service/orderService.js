@@ -71,6 +71,7 @@ class OrderService {
         costPrice: item.costPrice || null,
         discount: item.discount || 0,
         subtotal: item.subtotal || (item.unitPrice * item.quantity),
+        warehouseId: item.warehouseId || null,
       });
       await orderItemRepo.save(orderItem);
     }
@@ -174,20 +175,66 @@ class OrderService {
     };
   }
 
-  async getOrderDetail(orderId) {
-    const orderRepo = getRepository('Order');
+ async getOrderDetail(orderId) {
+  const orderRepo = getRepository('Order');
+  console.log('Fetching order detail for orderId:', orderId); 
+  const order = await orderRepo
+    .createQueryBuilder('order')
+    .leftJoinAndSelect('order.session', 'session')
+    .leftJoinAndSelect('order.user', 'user')
+    .leftJoinAndSelect('order.customer', 'customer')
+    .leftJoinAndSelect('order.items', 'items')
+    .leftJoinAndSelect('items.product', 'product')
+    .leftJoinAndSelect('order.warehouse', 'warehouse')
+    .leftJoinAndSelect('order.approver', 'approver')
+   .leftJoinAndSelect('items.warehouse', 'itemWarehouse')
+    .leftJoinAndMapOne(
+      'items.inventory',
+      'Inventory',
+      'inventory',
+      `
+      inventory.product_id = items.product_id
+      AND inventory.warehouse_id = items.warehouse_id
+      `
+    )
 
-    const order = await orderRepo.findOne({
-      where: { id: orderId },
-      relations: ['session', 'user', 'customer', 'items', 'items.product', 'warehouse', 'approver'],
-    });
 
-    if (!order) {
-      throw new Error('Order not found');
-    }
+    .where('order.id = :orderId', { orderId })
 
-    return order;
+    .getOne();
+
+  if (!order) {
+    throw new Error('Order not found');
   }
+
+  return order;
+}
+
+async getOrderItems(orderId){
+   const orderRepo = getRepository('Order');
+  console.log('Fetching order detail for orderId:', orderId); 
+  const order = await orderRepo
+    .createQueryBuilder('order')
+    .leftJoinAndSelect('order.items', 'items')
+    .leftJoinAndMapOne(
+      'items.inventory',
+      'Inventory',
+      'inventory',
+      `
+      inventory.product_id = items.product_id
+      AND inventory.warehouse_id = items.warehouse_id
+      `
+    )
+    .where('order.id = :orderId', { orderId })
+
+    .getOne();
+
+  if (!order) {
+    throw new Error('Order not found');
+  }
+
+  return order.items;
+}
 
   async updateOrderStatus(orderId, data) {
     const { status, rejectReason, rejectNote, approvedBy, note } = data;
