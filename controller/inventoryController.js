@@ -416,7 +416,6 @@ class InventoryController {
       const { productId, fromWarehouseId, toWarehouseId, quantity } = ctx.request.body;
       const userId = ctx.state.user?.id;
 
-      // Validation
       if (!productId || !fromWarehouseId || !toWarehouseId || !quantity) {
         ctx.status = 400;
         ctx.body = {

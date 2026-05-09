@@ -48,7 +48,7 @@ class WarehouseService {
   }
 
   async getWarehouses(query) {
-    const { page = 1, limit = 10, zoneId, isActive, search } = query;
+    const { page = 1, limit = 10, zoneId, isActive, search_text } = query;
     const warehouseRepo = getRepository('Warehouse');
 
     const where = {};
@@ -70,11 +70,11 @@ class WarehouseService {
       }
     }
 
-    if (search) {
+    if (search_text) {
       if (zoneId || isActive !== undefined) {
-        queryBuilder = queryBuilder.andWhere('(warehouse.name ILIKE :search OR warehouse.code ILIKE :search)', { search: `%${search}%` });
+        queryBuilder = queryBuilder.andWhere('(warehouse.name ILIKE :search_text OR warehouse.code ILIKE :search_text)', { search_text: `%${search_text}%` });
       } else {
-        queryBuilder = queryBuilder.where('(warehouse.name ILIKE :search OR warehouse.code ILIKE :search)', { search: `%${search}%` });
+        queryBuilder = queryBuilder.where('(warehouse.name ILIKE :search_text OR warehouse.code ILIKE :search_text)', { search_text: `%${search_text}%` });
       }
     }
 

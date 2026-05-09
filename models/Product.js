@@ -84,6 +84,11 @@ module.exports = new EntitySchema({
       joinColumn: { name: 'category_id' },
       nullable: true,
     },
+    inventories: {
+      type: 'one-to-many',
+      target: 'Inventory',
+      inverseSide: 'product',
+    },
   },
   indices: [
     { columns: ['sku'] },

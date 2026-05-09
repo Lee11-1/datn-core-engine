@@ -35,21 +35,28 @@ class ProductService {
   }
 
   async getProducts(query) {
-    const { page = 1, limit = 10, categoryId, search } = query;
+    const { page = 1, limit = 10, categoryId, search_text, warehouse_id } = query;
     const productRepo = getRepository('Product');
 
     let queryBuilder = productRepo.createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category');
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.inventories', 'inventory')
+      .leftJoinAndSelect('inventory.warehouse', 'warehouse')
+
 
     if (categoryId) {
       queryBuilder = queryBuilder.where('product.categoryId = :categoryId', { categoryId });
     }
 
-    if (search) {
+    if (search_text) {
       queryBuilder = queryBuilder.andWhere(
-        '(product.name ILIKE :search OR product.sku ILIKE :search OR product.description ILIKE :search)',
-        { search: `%${search}%` }
+        '(product.name ILIKE :search_text OR product.sku ILIKE :search_text OR product.description ILIKE :search_text)',
+        { search_text: `%${search_text}%` }
       );
+    }
+    
+    if (warehouse_id){
+      queryBuilder = queryBuilder.andWhere('inventory.warehouse_id = :warehouse_id', { warehouse_id });
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);

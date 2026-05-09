@@ -490,12 +490,10 @@ class InventoryService {
         changes.quantity = quantity;
       }
 
-      // Update reserved quantity if provided
       if (reservedQty !== undefined && reservedQty !== null) {
         if (reservedQty < 0) {
           throw new Error('Reserved quantity cannot be negative');
         }
-        // Check that reserved quantity doesn't exceed total quantity
         const totalQty = quantity !== undefined ? quantity : inventory.quantity;
         if (reservedQty > totalQty) {
           throw new Error(
