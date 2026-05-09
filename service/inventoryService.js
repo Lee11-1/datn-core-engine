@@ -3,7 +3,7 @@ const Inventory = require('../models/Inventory');
 const ActivityLog = require('../models/ActivityLog');
 const Product = require('../models/Product');
 const Warehouse = require('../models/Warehouse');
-
+const { AppDataSource } = require('../config/database');
 class InventoryService {
   /**
    * Get inventory records with filters and pagination
@@ -461,9 +461,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Update inventory record (quantity and/or reservedQty)
-   */
   async updateInventory(inventoryId, updateData = {}) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -507,7 +504,6 @@ class InventoryService {
 
       const updated = await inventoryRepository.save(inventory);
 
-      // Log activity
       await this.logInventoryActivity(
         'UPDATE',
         inventory.productId,
@@ -525,6 +521,56 @@ class InventoryService {
       throw error;
     }
   }
+
+async batchUpdateInventories(updates = []) {
+  const queryRunner = AppDataSource.createQueryRunner();
+
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+
+    const inventoryRepository =
+      queryRunner.manager.getRepository('Inventory');
+
+    const updatedInventories = [];
+
+    for (const updateData of updates) {
+
+      const { id, ...data } = updateData;
+
+      const inventory = await inventoryRepository.findOne({
+        where: { id },
+        relations: ['product', 'warehouse'],
+      });
+
+      if (!inventory) {
+        throw new Error(`Inventory ${id} not found`);
+      }
+
+      inventory.quantity = data.quantity;
+
+      const updated = await inventoryRepository.save(inventory);
+
+      updatedInventories.push(updated);
+    }
+
+    await queryRunner.commitTransaction();
+
+    return updatedInventories;
+
+  } catch (error) {
+
+    await queryRunner.rollbackTransaction();
+
+    throw error;
+
+  } finally {
+
+    await queryRunner.release();
+
+  }
+}
 }
 
 module.exports = new InventoryService();

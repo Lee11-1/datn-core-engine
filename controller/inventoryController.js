@@ -203,7 +203,6 @@ class InventoryController {
     try {
       const { id } = ctx.params;
       const { quantity, reservedQty, userId } = ctx.request.body;
-
       if (!id) {
         ctx.status = 400;
         ctx.body = {
@@ -232,6 +231,38 @@ class InventoryController {
       ctx.body = {
         success: true,
         message: 'Inventory updated successfully',
+        data: result,
+      };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  /**
+   * Batch update inventory records
+   */
+  async batchUpdateInventories(ctx) {
+    try {
+      const { inventories } = ctx.request.body;
+      console.log('Received batch update request with data:', inventories);
+      if (!inventories || !Array.isArray(inventories)) {
+        ctx.status = 400;
+        ctx.body = {
+          success: false,
+          message: 'Invalid inventory data format',
+        };
+        return;
+      }
+      const result = await inventoryService.batchUpdateInventories(inventories);
+
+      ctx.status = 200;
+      ctx.body = {
+        success: true,
+        message: 'Inventories updated successfully',
         data: result,
       };
     } catch (error) {

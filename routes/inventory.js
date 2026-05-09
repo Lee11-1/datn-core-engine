@@ -5,6 +5,8 @@ const router = new Router({ prefix: '/inventory' });
 
 router.get('/', inventoryController.getInventory);
 
+router.post('/batch-update', inventoryController.batchUpdateInventories);
+
 router.get('/:id', inventoryController.getInventoryById);
 
 router.put('/:id', inventoryController.updateInventory);
@@ -28,5 +30,6 @@ router.get('/history/movements', inventoryController.getMovementHistory);
 router.get('/low-stock', inventoryController.getLowStockProducts);
 
 router.get('/warehouse/:warehouseId/summary', inventoryController.getWarehouseSummary);
+
 
 module.exports = router;
