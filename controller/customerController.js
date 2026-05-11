@@ -39,28 +39,6 @@ class CustomerController {
     }
   }
 
-  async getCustomerById(ctx) {
-    try {
-      const { id } = ctx.params;
-      const customer = await customerService.getCustomerById(id);
-
-      ctx.body = {
-        success: true,
-        data: customer,
-      };
-    } catch (error) {
-      if (error.message === 'Customer not found') {
-        ctx.status = 404;
-      } else {
-        ctx.status = 500;
-      }
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async updateCustomer(ctx) {
     try {
       const { id } = ctx.params;

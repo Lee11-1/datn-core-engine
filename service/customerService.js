@@ -35,7 +35,7 @@ class CustomerService {
   }
 
   async getCustomers(query) {
-    const { page = 1, limit = 10, zoneId, search } = query;
+    const { page = 1, limit = 10, zoneId, search, customerId } = query;
     const customerRepo = getRepository('Customer');
 
     let queryBuilder = customerRepo.createQueryBuilder('customer')
@@ -43,6 +43,13 @@ class CustomerService {
 
     if (zoneId) {
       queryBuilder = queryBuilder.where('customer.zoneId = :zoneId', { zoneId });
+    }
+
+    if (customerId) {
+      queryBuilder = queryBuilder.where('customer.id = :customerId', { customerId })
+      .andWhere(
+      'customer.created_at >= NOW() - INTERVAL \'5 months\''
+      );
     }
 
     if (search) {
@@ -68,20 +75,6 @@ class CustomerService {
         totalPages: Math.ceil(total / limit),
       },
     };
-  }
-
-  async getCustomerById(id) {
-    const customerRepo = getRepository('Customer');
-    const customer = await customerRepo.findOne({
-      where: { id },
-      relations: ['zone', 'createdByUser'],
-    });
-
-    if (!customer) {
-      throw new Error('Customer not found');
-    }
-
-    return customer;
   }
 
   async updateCustomer(id, updateData) {
