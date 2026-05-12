@@ -66,6 +66,11 @@ module.exports = new EntitySchema({
       type: 'boolean',
       default: true,
     },
+    deleted: {
+      name: 'deleted',
+      type: 'boolean',
+      default: false,
+    },
     createdAt: {
       name: 'created_at',
       type: 'timestamptz',

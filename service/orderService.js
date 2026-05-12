@@ -88,19 +88,37 @@ class OrderService {
     const { page = 1, limit = 10, userId, customerId, sessionId, status } = query;
     const orderRepo = getRepository('Order');
 
-    const where = {};
-    if (userId) where.userId = userId;
-    if (customerId) where.customerId = customerId;
-    if (sessionId) where.sessionId = sessionId;
-    if (status) where.status = status;
+    const queryBuilder = orderRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.customer', 'customer')
+      .orderBy('order.createdAt', 'DESC')
+      .take(parseInt(limit))
+      .skip(((parseInt(page) - 1 )* parseInt(limit)));
 
-    const [orders, total] = await orderRepo.findAndCount({
-      where,
-      relations: [ 'customer'],
-      take: parseInt(limit),
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      order: { createdAt: 'DESC' },
-    });
+    if (userId) {
+      queryBuilder.andWhere('order.userId = :userId', { userId })
+      .andWhere(
+          `order.created_at >= NOW() - INTERVAL '5 months'`
+        );
+    }
+
+    if (customerId) {
+      queryBuilder
+        .andWhere('order.customerId = :customerId', { customerId })
+        .andWhere(
+          `order.created_at >= NOW() - INTERVAL '5 months'`
+        );
+    }
+
+    if (sessionId) {
+      queryBuilder.andWhere('order.sessionId = :sessionId', { sessionId });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('order.status = :status', { status });
+    }
+
+    const [orders, total] = await queryBuilder.getManyAndCount();
 
     return {
       orders,

@@ -39,10 +39,10 @@ class ProductService {
     const productRepo = getRepository('Product');
 
     let queryBuilder = productRepo.createQueryBuilder('product')
+      .where('product.deleted = :deleted', { deleted: false })
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.inventories', 'inventory')
       .leftJoinAndSelect('inventory.warehouse', 'warehouse')
-
 
     if (categoryId) {
       queryBuilder = queryBuilder.where('product.categoryId = :categoryId', { categoryId });
@@ -139,7 +139,8 @@ class ProductService {
       throw new Error('Product not found');
     }
 
-    return await productRepo.remove(product);
+    product.deleted = true
+    return await productRepo.save(product);
   }
 
   async getProductsBySKU(skus) {

@@ -47,9 +47,6 @@ class CustomerService {
 
     if (customerId) {
       queryBuilder = queryBuilder.where('customer.id = :customerId', { customerId })
-      .andWhere(
-      'customer.created_at >= NOW() - INTERVAL \'5 months\''
-      );
     }
 
     if (search) {
