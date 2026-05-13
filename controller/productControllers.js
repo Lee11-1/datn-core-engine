@@ -130,31 +130,6 @@ class ProductController {
     }
   }
 
-  async getProductsByCategory(ctx) {
-    try {
-      const { categoryId } = ctx.params;
-      const { limit = 10, offset = 0 } = ctx.query;
-
-      const result = await productService.getProductsByCategory(
-        categoryId,
-        parseInt(limit),
-        parseInt(offset)
-      );
-
-      ctx.body = {
-        success: true,
-        data: result.products,
-        total: result.total,
-      };
-    } catch (error) {
-      ctx.status = 500;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async searchProducts(ctx) {
     try {
       const { keyword, limit = 20 } = ctx.query;

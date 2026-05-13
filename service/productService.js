@@ -35,7 +35,7 @@ class ProductService {
   }
 
   async getProducts(query) {
-    const { page = 1, limit = 10, categoryId, search_text, warehouse_id } = query;
+    const { page = 1, limit = 10, categoryIds, search_text, warehouse_id } = query;
     const productRepo = getRepository('Product');
 
     let queryBuilder = productRepo.createQueryBuilder('product')
@@ -44,8 +44,9 @@ class ProductService {
       .leftJoinAndSelect('product.inventories', 'inventory')
       .leftJoinAndSelect('inventory.warehouse', 'warehouse')
 
-    if (categoryId) {
-      queryBuilder = queryBuilder.where('product.categoryId = :categoryId', { categoryId });
+    if (categoryIds && categoryIds.length > 0) {
+      const ids = categoryIds.split(',');
+      queryBuilder = queryBuilder.where('product.categoryId IN (:...ids)', { ids });
     }
 
     if (search_text) {
@@ -151,21 +152,6 @@ class ProductService {
     });
   }
 
-  async getProductsByCategory(categoryId, limit = 10, offset = 0) {
-    const productRepo = getRepository('Product');
-    const [products, total] = await productRepo.findAndCount({
-      where: {
-        categoryId,
-        isActive: true,
-      },
-      relations: ['category'],
-      take: limit,
-      skip: offset,
-      order: { createdAt: 'DESC' },
-    });
-
-    return { products, total };
-  }
 
   async searchProducts(keyword, limit = 20) {
     const productRepo = getRepository('Product');
