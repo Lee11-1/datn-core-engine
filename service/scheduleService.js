@@ -55,7 +55,7 @@ class ScheduleService {
   }
 
   async createSchedule(scheduleData) {
-    const { userId, zoneId, warehouseId, startDate, endDate, status, note, createdBy } = scheduleData;
+    const { userId, zoneId, warehouseId, startDate, endDate, status, note, createdBy, title } = scheduleData;
 
     if (!userId || !zoneId || !startDate || !endDate || !createdBy ) {
       throw new Error('Missing required fields: userId, zoneId, startDate, endDate, createdBy');
@@ -103,6 +103,7 @@ class ScheduleService {
                             status: status || 'planned',
                             note: note || null,
                             createdBy,
+                            title: title || null
                         })
     
     const savedSchedule = await scheduleRepo.save(schedule);
@@ -167,20 +168,17 @@ class ScheduleService {
       relations: ['user', 'zone', 'warehouse', 'creator'],
       select: {
         id: true,
+        title: true,
         userId: true,
         zoneId: true,
-        warehouseId: true,
-        scheduledDate: true,
-        startTime: true,
-        endTime: true,
+        startDate: true,
+        endDate: true,
         status: true,
         note: true,
         createdBy: true,
         createdAt: true,
-        updatedAt: true,
         user: { id: true, username: true, fullName: true, phone: true },
         zone: { id: true, name: true },
-        warehouse: { id: true, name: true },
         creator: { id: true, username: true, fullName: true },
       }
     });

@@ -60,12 +60,11 @@ class OrderController {
   async getOrdersBySchedule(ctx) {
     try {
       const { scheduleId } = ctx.params;
-      const result = await orderService.getOrdersBySchedule(scheduleId, ctx.query);
+      const result = await orderService.getOrdersBySchedule(scheduleId);
 
       ctx.body = {
         success: true,
-        data: result.orders,
-        pagination: result.pagination,
+        data: result.results,
       };
     } catch (error) {
       ctx.status = 500;

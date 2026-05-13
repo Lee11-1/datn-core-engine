@@ -85,16 +85,20 @@ class OrderService {
   }
 
   async getOrders(query) {
-    const { page = 1, limit = 10, userId, customerId, sessionId, status } = query;
+    const { page = 1, limit = 10, userId, customerId, sessionId, status, scheduleId } = query;
     const orderRepo = getRepository('Order');
-
     const queryBuilder = orderRepo
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
       .orderBy('order.createdAt', 'DESC')
       .take(parseInt(limit))
       .skip(((parseInt(page) - 1 )* parseInt(limit)));
-
+      
+    if (scheduleId) {
+      queryBuilder
+      .leftJoinAndSelect('order.session', 'session')
+      .andWhere('session.scheduleId = :scheduleId', { scheduleId });
+    }
     if (userId) {
       queryBuilder.andWhere('order.userId = :userId', { userId })
       .andWhere(
@@ -131,30 +135,21 @@ class OrderService {
     };
   }
 
-  async getOrdersBySchedule(scheduleId, query = {}) {
-    const { page = 1, limit = 10 } = query;
+  async getOrdersBySchedule(scheduleId) {
     const orderRepo = getRepository('Order');
 
-    const [orders, total] = await orderRepo.createQueryBuilder('order')
-      .leftJoinAndSelect('order.session', 'session')
-      .leftJoinAndSelect('order.user', 'user')
-      .leftJoinAndSelect('order.customer', 'customer')
-      .leftJoinAndSelect('order.items', 'items')
-      .leftJoinAndSelect('items.product', 'product')
+    const results = await orderRepo
+      .createQueryBuilder('order')
+      .leftJoin('order.session', 'session')
+      .leftJoin('order.customer', 'customer')
       .where('session.scheduleId = :scheduleId', { scheduleId })
-      .take(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit))
-      .orderBy('order.createdAt', 'DESC')
-      .getManyAndCount();
+      .select('customer.id', 'customerId')
+      .addSelect('COUNT(order.id)', 'totalOrders')
+      .groupBy('customer.id')
+      .getRawMany();
 
     return {
-      orders,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit)),
-      },
+      results,
     };
   }
 

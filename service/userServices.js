@@ -1,6 +1,5 @@
 const { getRepository } = require('../config/typeorm');
 const bcrypt = require('bcryptjs');
-
 class UserService {
   async createUser(userData) {
     const { username, email, password, fullName, phone, role } = userData;
