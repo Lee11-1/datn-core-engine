@@ -10,7 +10,9 @@ class Log {
   constructor(data) {
     this.data = data;
   }
-
+  toJson() {
+        return JSON.parse(JSON.stringify(this.data))
+    }
   createLog() {
     console.log("Request Log:", JSON.stringify(this.data, null, 2));
   }
@@ -75,13 +77,7 @@ async function log(ctx, next) {
         code: err.code,
         message: err.message,
       };
-    } else if (err.name === "ThirdPartyError") {
-      ctx.status = 502;
-      ctx.body = {
-        code: 502,
-        message: err.message,
-      };
-    } else if (err.name === "AuthenticationError") {
+    }  else if (err.name === "AuthenticationError") {
       ctx.status = 401;
       ctx.body = {
         code: 401,
