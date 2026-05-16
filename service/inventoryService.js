@@ -113,9 +113,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Reserve inventory quantity (used when order is placed)
-   */
   async reserveQuantity(productId, warehouseId, quantity, userId = null, orderId = null) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -157,9 +154,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Deduct inventory (used when order is shipped/delivered)
-   */
   async deductQuantity(productId, warehouseId, quantity, userId = null, orderId = null) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -204,10 +198,7 @@ class InventoryService {
       throw error;
     }
   }
-
-  /**
-   * Add inventory quantity (used for stock in/replenishment)
-   */
+ 
   async createQuantity(productId, warehouseId, quantity, userId = null,) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -280,9 +271,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Release reserved quantity (used when order is cancelled)
-   */
   async releaseReservedQuantity(productId, warehouseId, quantity, userId = null, orderId = null) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -323,9 +311,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Get inventory movement history
-   */
   async getInventoryMovementHistory(filters = {}) {
     try {
       const activityLogRepository = getRepository(ActivityLog);
@@ -361,10 +346,6 @@ class InventoryService {
       throw new Error(`Failed to get inventory movement history: ${error.message}`);
     }
   }
-
-  /**
-   * Log inventory activity
-   */
   async logInventoryActivity(action, productId, warehouseId, quantity, userId = null, metadata = {}) {
     try {
       const activityLogRepository = getRepository(ActivityLog);
@@ -389,9 +370,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Get low stock products
-   */
   async getLowStockProducts(threshold = 10) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -408,10 +386,6 @@ class InventoryService {
       throw new Error(`Failed to get low stock products: ${error.message}`);
     }
   }
-
-  /**
-   * Get inventory summary by warehouse
-   */
   async getInventorySummaryByWarehouse(warehouseId) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -436,9 +410,7 @@ class InventoryService {
     }
   }
 
-  /**
-   * Transfer inventory between warehouses
-   */
+  
   async transferInventory(productId, fromWarehouseId, toWarehouseId, quantity, userId = null) {
     try {
       // Deduct from source warehouse
@@ -522,55 +494,7 @@ class InventoryService {
     }
   }
 
-async batchUpdateInventories(updates = []) {
-  const queryRunner = AppDataSource.createQueryRunner();
 
-  await queryRunner.connect();
-  await queryRunner.startTransaction();
-
-  try {
-
-    const inventoryRepository =
-      queryRunner.manager.getRepository('Inventory');
-
-    const updatedInventories = [];
-
-    for (const updateData of updates) {
-
-      const { id, ...data } = updateData;
-
-      const inventory = await inventoryRepository.findOne({
-        where: { id },
-        relations: ['product', 'warehouse'],
-      });
-
-      if (!inventory) {
-        throw new Error(`Inventory ${id} not found`);
-      }
-
-      inventory.quantity = data.quantity;
-
-      const updated = await inventoryRepository.save(inventory);
-
-      updatedInventories.push(updated);
-    }
-
-    await queryRunner.commitTransaction();
-
-    return updatedInventories;
-
-  } catch (error) {
-
-    await queryRunner.rollbackTransaction();
-
-    throw error;
-
-  } finally {
-
-    await queryRunner.release();
-
-  }
-}
 }
 
 module.exports = new InventoryService();

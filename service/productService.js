@@ -37,7 +37,6 @@ class ProductService {
   async getProducts(query) {
     const { page = 1, limit = 10, categoryIds, search_text, warehouse_id } = query;
     const productRepo = getRepository('Product');
-
     let queryBuilder = productRepo.createQueryBuilder('product')
       .where('product.deleted = :deleted', { deleted: false })
       .leftJoinAndSelect('product.category', 'category')
@@ -46,7 +45,7 @@ class ProductService {
 
     if (categoryIds && categoryIds.length > 0) {
       const ids = categoryIds.split(',');
-      queryBuilder = queryBuilder.where('product.categoryId IN (:...ids)', { ids });
+      queryBuilder = queryBuilder.andWhere('product.categoryId IN (:...ids)', { ids });
     }
 
     if (search_text) {
@@ -60,19 +59,35 @@ class ProductService {
       queryBuilder = queryBuilder.andWhere('inventory.warehouse_id = :warehouse_id', { warehouse_id });
     }
 
+    const { total } = await queryBuilder.clone().orderBy().select('COUNT(*)', 'total').getRawOne();
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [products, total] = await queryBuilder
-      .orderBy('product.createdAt', 'DESC')
-      .skip(skip)
-      .take(parseInt(limit))
-      .getManyAndCount();
+    const products = await queryBuilder
+          .select([
+            'product.price as price',
+            'product.name as name',
+            'inventory.quantity as quantity',
+            'warehouse.address as address',
+            'product.sku as sku',
+            'product.images as images',
+            'product.id as id',
+            'product.unit as unit',
+            'product.createdAt as created_at',
+            'product.isActive as is_active',
+            'inventory.warehouseId as warehouse_id'
+          ])
+          .orderBy('product.createdAt', 'DESC')
+          .offset(skip)
+          .limit(parseInt(limit))
+          .getRawMany();
+
 
     return {
       products,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total,
+        total: parseInt(total),
         totalPages: Math.ceil(total / limit),
       },
     };

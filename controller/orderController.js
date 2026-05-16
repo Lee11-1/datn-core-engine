@@ -148,6 +148,26 @@ class OrderController {
       };
     }
   }
+
+  approveOrder = async (ctx) => {
+    try {
+      const { orderId } = ctx.params;
+      const { note = '', approvedBy, inventories } = ctx.request.body;
+      const result = await orderService.approveOrder(orderId, approvedBy, note, inventories);
+
+      ctx.body = {
+        success: true,
+        message: 'Order approved successfully',
+        data: result,
+      };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
 }
 
 module.exports = new OrderController();
