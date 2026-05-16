@@ -141,6 +141,9 @@ class ProductService {
     }
 
     product.deleted = true
+    const inventoryRepo = await getRepository('Inventory')
+    await inventoryRepo.delete({ productId: id });
+
     return await productRepo.save(product);
   }
 
