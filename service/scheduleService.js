@@ -135,17 +135,13 @@ class ScheduleService {
         id: true,
         userId: true,
         zoneId: true,
-        warehouseId: true,
         startDate: true,
         endDate: true,
         status: true,
         note: true,
-        createdBy: true,
         createdAt: true,
-        updatedAt: true,
         user: { id: true, username: true, fullName: true },
         zone: { id: true, name: true },
-        warehouse: { id: true, name: true },
         title: true
       }
     });

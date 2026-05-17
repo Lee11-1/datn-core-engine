@@ -35,6 +35,38 @@ class ProductService {
   }
 
   async getProducts(query) {
+    const { page = 1, limit = 10, search_text } = query;
+    const productRepo = getRepository('Product');
+
+    let queryBuilder = productRepo.createQueryBuilder('product')
+      .where('product.deleted = :deleted', { deleted: false })
+
+    if (search_text) {
+      queryBuilder = queryBuilder.andWhere(
+        '(product.name ILIKE :search_text OR product.sku ILIKE :search_text OR product.description ILIKE :search_text)',
+        { search_text: `%${search_text}%` }
+      );
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const [products, total] = await queryBuilder
+      .orderBy('product.createdAt', 'DESC')
+      .skip(skip)
+      .take(parseInt(limit))
+      .getManyAndCount();
+
+    return {
+      products,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+    async getProductsInventory(query) {
     const { page = 1, limit = 10, categoryIds, search_text, warehouse_id } = query;
     const productRepo = getRepository('Product');
     let queryBuilder = productRepo.createQueryBuilder('product')
@@ -95,10 +127,13 @@ class ProductService {
 
   async getProductById(id) {
     const productRepo = getRepository('Product');
-    const product = await productRepo.findOne({
-      where: { id },
-      relations: ['category'],
-    });
+    let queryBuilder = productRepo.createQueryBuilder('product')
+      .where('product.deleted = :deleted', { deleted: false })
+      .leftJoinAndSelect('product.inventories', 'inventory')
+      .leftJoinAndSelect('product.category', 'category')
+
+    const product = await queryBuilder.andWhere('product.id = :id', { id }).getOne();
+
 
     if (!product) {
       throw new Error('Product not found');
@@ -169,7 +204,6 @@ class ProductService {
       relations: ['category'],
     });
   }
-
 
   async searchProducts(keyword, limit = 20) {
     const productRepo = getRepository('Product');
