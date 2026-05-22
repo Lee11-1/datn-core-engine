@@ -39,6 +39,23 @@ class ProductController {
     }
   }
 
+  async getProductsInventory(ctx) {
+    try {
+      const result = await productService.getProductsInventory(ctx.query);
+
+      ctx.body = {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   async getProductById(ctx) {
     try {
       const { id } = ctx.params;

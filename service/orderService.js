@@ -1,4 +1,5 @@
 const { getRepository } = require('../config/typeorm');
+const { AppDataSource } = require('../config/database');
 
 class OrderService {
   async createOrder(orderData) {
@@ -298,6 +299,70 @@ async getOrderItems(orderId){
 
     return code;
   }
+
+  approveOrder = async (orderId, approvedBy, note = '', inventories) => {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+  try {
+    const orderRepo = queryRunner.manager.getRepository('Order');
+    const order = await orderRepo.findOne({ where: { id: orderId } });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+      order.status = 'approved';
+
+      order.approvedAt = new Date();
+      order.approvedBy = approvedBy || null;
+
+    if (note) {
+      order.note = note;
+    }
+
+    const updatedOrder = await orderRepo.save(order);
+    const inventoryRepository = queryRunner.manager.getRepository('Inventory');
+
+    const updatedInventories = [];
+
+    for (const updateData of inventories) {
+
+      const { id, ...data } = updateData;
+
+      const inventory = await inventoryRepository.findOne({
+        where: { id },
+        relations: ['product', 'warehouse'],
+      });
+
+      if (!inventory) {
+        throw new Error(`Inventory ${id} not found`);
+      }
+
+      inventory.quantity = data.quantity;
+
+      const updated = await inventoryRepository.save(inventory);
+
+      updatedInventories.push(updated);
+    }
+
+    await queryRunner.commitTransaction();
+
+    return updatedOrder;
+
+  } catch (error) {
+
+    await queryRunner.rollbackTransaction();
+
+    throw error;
+
+  } finally {
+
+    await queryRunner.release();
+
+  }
+  }
+
 }
 
 module.exports = new OrderService();

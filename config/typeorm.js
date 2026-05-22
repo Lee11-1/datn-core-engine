@@ -6,7 +6,7 @@ let isInitialized = false;
 
 async function initializeDatabase() {
   if (isInitialized) {
-    console.log('✅ TypeORM database connection already initialized');
+    console.log(' TypeORM database connection already initialized');
     return AppDataSource;
   }
   
@@ -15,7 +15,7 @@ async function initializeDatabase() {
     isInitialized = true;
     return AppDataSource;
   } catch (error) {
-    console.error('❌ Error during TypeORM database initialization:', error);
+    console.error(' Error during TypeORM database initialization:', error);
     throw error;
   }
 }
@@ -28,9 +28,9 @@ async function closeDatabase() {
   try {
     await AppDataSource.destroy();
     isInitialized = false;
-    console.log('✅ TypeORM database connection closed');
+    console.log(' TypeORM database connection closed');
   } catch (error) {
-    console.error('❌ Error closing TypeORM database connection:', error);
+    console.error(' Error closing TypeORM database connection:', error);
     throw error;
   }
 }
