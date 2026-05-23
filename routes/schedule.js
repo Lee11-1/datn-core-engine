@@ -18,6 +18,8 @@ router.get('/user', scheduleController.getSchedulesByUser.bind(scheduleControlle
 
 router.get('/:id', scheduleController.getScheduleById.bind(scheduleController));
 
+router.get('/detail/:id', scheduleController.getScheduleDetail.bind(scheduleController));
+
 router.put('/:id', scheduleController.updateSchedule.bind(scheduleController));
 
 router.delete('/:id', scheduleController.deleteSchedule.bind(scheduleController));

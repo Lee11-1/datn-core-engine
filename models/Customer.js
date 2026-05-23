@@ -73,6 +73,11 @@ module.exports = new EntitySchema({
       joinColumn: { name: 'created_by' },
       nullable: true,
     },
+    orders: {
+      type: 'one-to-many',
+      target: 'Order',
+      inverseSide: 'customer',
+    },
   },
   indices: [
     { spatial: true, columns: ['location'] },

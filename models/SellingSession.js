@@ -88,6 +88,11 @@ module.exports = new EntitySchema({
       target: 'User',
       joinColumn: { name: 'user_id' },
     },
+    orders: {
+      type: 'one-to-one',
+      target: 'Order',
+      inverseSide: 'session',
+    },
     customer: {
       type: 'many-to-one',
       target: 'Customer',

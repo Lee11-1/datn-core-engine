@@ -68,6 +68,11 @@ module.exports = new EntitySchema({
       target: 'User',
       joinColumn: { name: 'user_id' },
     },
+    sessions: {
+      type: 'one-to-many',
+      target: 'SellingSession',
+      joinColumn: { name: 'id' },
+    },
     zone: {
       type: 'many-to-one',
       target: 'Zone',

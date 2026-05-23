@@ -78,6 +78,23 @@ class ScheduleController {
     }
   }
 
+  async getScheduleDetail(ctx) {
+    try {
+      const { id } = ctx.params;
+      const result = await scheduleService.getScheduleDetail(id);
+      ctx.body = {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      ctx.status = 404;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   async updateSchedule(ctx) {
     try {
       const { id } = ctx.params;

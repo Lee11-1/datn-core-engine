@@ -186,6 +186,32 @@ class ScheduleService {
     return schedule;
   }
 
+    async getScheduleDetail(id) {
+      const scheduleRepo = getRepository('Schedule');
+      const schedule = await scheduleRepo.findOne({
+        where: { id },
+        relations: ['user', 'zone', 'creator'],
+      });
+
+      if (!schedule) {
+        throw new Error('Schedule not found');
+      }
+      const customerRepo = getRepository('Customer');
+      const customers = await customerRepo
+        .createQueryBuilder('customer')
+        .leftJoinAndSelect('customer.orders', 'order')
+        .leftJoinAndSelect('order.session', 'session')
+        .where('customer.zone_id = :zoneId', {
+          zoneId: schedule.zoneId,
+        })
+        .andWhere('session.schedule_id = :scheduleId', {
+          scheduleId: schedule.id,
+        })
+        .getMany();
+
+      return { schedule, customers };
+    }
+
   async updateSchedule(id, updates) {
     const scheduleRepo = getRepository('Schedule');
     const schedule = await scheduleRepo.findOne({ where: { id } });
