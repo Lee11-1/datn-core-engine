@@ -68,7 +68,7 @@ class OrderService {
         orderId: savedOrder.id,
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
+        unitPrice: item.price,
         costPrice: item.costPrice || null,
         discount: item.discount || 0,
         subtotal: item.subtotal || (item.unitPrice * item.quantity),
