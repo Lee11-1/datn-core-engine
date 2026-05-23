@@ -51,31 +51,19 @@ class WarehouseService {
     const { page = 1, limit = 10, zoneId, isActive, search_text } = query;
     const warehouseRepo = getRepository('Warehouse');
 
-    const where = {};
-    if (zoneId) where.zoneId = zoneId;
-    if (isActive !== undefined) where.isActive = isActive === 'true' || isActive === true;
-
-    let queryBuilder = warehouseRepo.createQueryBuilder('warehouse');
+    let queryBuilder = warehouseRepo.createQueryBuilder('warehouse').where('warehouse.deleted = false');
 
     if (zoneId) {
-      queryBuilder = queryBuilder.where('warehouse.zoneId = :zoneId', { zoneId });
+      queryBuilder = queryBuilder.andWhere('warehouse.zoneId = :zoneId', { zoneId });
     }
 
     if (isActive !== undefined) {
       const isActiveValue = isActive === 'true' || isActive === true;
-      if (zoneId) {
-        queryBuilder = queryBuilder.andWhere('warehouse.isActive = :isActive', { isActive: isActiveValue });
-      } else {
-        queryBuilder = queryBuilder.where('warehouse.isActive = :isActive', { isActive: isActiveValue });
-      }
+      queryBuilder = queryBuilder.andWhere('warehouse.isActive = :isActive', { isActive: isActiveValue });
     }
 
     if (search_text) {
-      if (zoneId || isActive !== undefined) {
         queryBuilder = queryBuilder.andWhere('(warehouse.name ILIKE :search_text OR warehouse.code ILIKE :search_text)', { search_text: `%${search_text}%` });
-      } else {
-        queryBuilder = queryBuilder.where('(warehouse.name ILIKE :search_text OR warehouse.code ILIKE :search_text)', { search_text: `%${search_text}%` });
-      }
     }
 
     queryBuilder = queryBuilder.leftJoinAndSelect('warehouse.zone', 'zone')
@@ -155,12 +143,12 @@ class WarehouseService {
   async deleteWarehouse(id) {
     const warehouseRepo = getRepository('Warehouse');
     const warehouse = await warehouseRepo.findOne({ where: { id } });
-
     if (!warehouse) {
       throw new Error('Warehouse not found');
     }
-
-    return await warehouseRepo.remove(warehouse);
+    warehouse.deleted = true;
+   
+    return  await warehouseRepo.save(warehouse);
   }
 
   async getWarehousesByZone(zoneId, query = {}) {

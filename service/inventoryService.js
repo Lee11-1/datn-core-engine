@@ -366,7 +366,6 @@ class InventoryService {
       await activityLogRepository.save(log);
     } catch (error) {
       console.error(`Failed to log inventory activity: ${error.message}`);
-      // Don't throw error, just log it
     }
   }
 
@@ -413,7 +412,6 @@ class InventoryService {
   
   async transferInventory(productId, fromWarehouseId, toWarehouseId, quantity, userId = null) {
     try {
-      // Deduct from source warehouse
       await this.deductQuantity(productId, fromWarehouseId, quantity, userId, null);
 
       await this.createQuantity(
