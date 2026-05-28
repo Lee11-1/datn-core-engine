@@ -10,6 +10,8 @@ router.post('/', orderController.createOrder.bind(orderController));
 
 router.get('/', orderController.getOrders.bind(orderController));
 
+router.get('/zone/:zoneId/customers', orderController.getOrdersByZoneWithCustomers.bind(orderController));
+
 router.get('/schedule/:scheduleId', orderController.getOrdersBySchedule.bind(orderController));
 
 router.get('/session/:sessionId', orderController.getOrdersBySession.bind(orderController));

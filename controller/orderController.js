@@ -129,6 +129,30 @@ class OrderController {
     }
   }
 
+  async getOrdersByZoneWithCustomers(ctx) {
+    try {
+      const { zoneId } = ctx.params;
+      const { startDate, endDate, status } = ctx.query;
+
+      const orders = await orderService.getOrdersByZoneWithCustomers(zoneId, {
+        startDate,
+        endDate,
+        status
+      });
+
+      ctx.body = {
+        success: true,
+        data: orders,
+      };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   async updateOrderStatus(ctx) {
     try {
       const { orderId } = ctx.params;

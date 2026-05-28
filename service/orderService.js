@@ -300,6 +300,68 @@ async getOrderItems(orderId){
     return code;
   }
 
+ 
+async getOrdersByZoneWithCustomers(zoneId, query = {}) {
+  try {
+    const { startDate, endDate, status = 'approved' } = query;
+
+    const orderRepo = getRepository('Order');
+
+    let queryBuilder = orderRepo
+      .createQueryBuilder('order')
+
+      .leftJoin('order.customer', 'customer')
+      .leftJoin('customer.zone', 'zone')
+
+      .select([
+        'customer.id as customerId',
+        'customer.fullName as fullName',
+        'customer.phone as phone',
+        'customer.email as email',
+        'customer.address as address',
+        'customer.location as location',
+        'COUNT(order.id) as orderCount',
+        'SUM(order.finalAmount) as totalRevenue'
+      ])
+
+      .where('zone.id = :zoneId', { zoneId })
+
+      .groupBy('customer.id')
+      .addGroupBy('customer.fullName')
+      .addGroupBy('customer.phone')
+      .addGroupBy('customer.email')
+      .addGroupBy('customer.address')
+      .addGroupBy('customer.location')
+
+      .orderBy('totalRevenue', 'DESC');
+
+    if (status) {
+      queryBuilder.andWhere('order.status = :status', { status });
+    }
+
+    if (startDate) {
+      queryBuilder.andWhere(
+        'order.createdAt >= :startDate',
+        { startDate }
+      );
+    }
+
+    if (endDate) {
+      queryBuilder.andWhere(
+        'order.createdAt <= :endDate',
+        { endDate }
+      );
+    }
+
+    const result = await queryBuilder.getRawMany();
+
+    return result;
+
+  } catch (error) {
+    throw error;
+  }
+}
+
   approveOrder = async (orderId, approvedBy, note = '', inventories) => {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
