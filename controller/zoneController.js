@@ -61,28 +61,6 @@ class ZoneController {
     }
   }
 
-  async getZoneByCode(ctx) {
-    try {
-      const { code } = ctx.params;
-      const zone = await zoneService.getZoneByCode(code);
-
-      ctx.body = {
-        success: true,
-        data: zone,
-      };
-    } catch (error) {
-      if (error.message === 'Zone not found') {
-        ctx.status = 404;
-      } else {
-        ctx.status = 500;
-      }
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async updateZone(ctx) {
     try {
       const { id } = ctx.params;
@@ -131,110 +109,6 @@ class ZoneController {
     }
   }
 
-  async getZoneTree(ctx) {
-    try {
-      const tree = await zoneService.getZoneTree(ctx.query);
-
-      ctx.body = {
-        success: true,
-        data: tree,
-      };
-    } catch (error) {
-      ctx.status = 500;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async getZonesByLevel(ctx) {
-    try {
-      const { level } = ctx.params;
-      const result = await zoneService.getZonesByLevel(level, ctx.query);
-
-      ctx.body = {
-        success: true,
-        data: result.zones,
-        pagination: result.pagination,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async getChildZones(ctx) {
-    try {
-      const { parentId } = ctx.params;
-      const result = await zoneService.getChildZones(parentId, ctx.query);
-
-      ctx.body = {
-        success: true,
-        data: result.zones,
-        pagination: result.pagination,
-      };
-    } catch (error) {
-      if (error.message === 'Parent zone not found') {
-        ctx.status = 404;
-      } else {
-        ctx.status = 500;
-      }
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async activateZone(ctx) {
-    try {
-      const { id } = ctx.params;
-      const zone = await zoneService.activateZone(id);
-
-      ctx.body = {
-        success: true,
-        message: 'Zone activated successfully',
-        data: zone,
-      };
-    } catch (error) {
-      if (error.message === 'Zone not found') {
-        ctx.status = 404;
-      } else {
-        ctx.status = 400;
-      }
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async deactivateZone(ctx) {
-    try {
-      const { id } = ctx.params;
-      const zone = await zoneService.deactivateZone(id);
-
-      ctx.body = {
-        success: true,
-        message: 'Zone deactivated successfully',
-        data: zone,
-      };
-    } catch (error) {
-      if (error.message === 'Zone not found') {
-        ctx.status = 404;
-      } else {
-        ctx.status = 400;
-      }
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
 
   async syncZones(ctx) {
     try {

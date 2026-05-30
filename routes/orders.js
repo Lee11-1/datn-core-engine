@@ -18,6 +18,10 @@ router.get('/session/:sessionId', orderController.getOrdersBySession.bind(orderC
 
 router.get('/user/:userId', orderController.getOrdersByUser.bind(orderController));
 
+router.get('/top-revenue-zones', orderController.getTopRevenueZones.bind(orderController));
+
+router.get('/statistics', orderController.getOrderStatistics.bind(orderController));
+
 router.get('/:orderId', orderController.getOrderDetail.bind(orderController));
 
 router.patch('/:orderId/status', orderController.updateOrderStatus.bind(orderController));
@@ -25,5 +29,6 @@ router.patch('/:orderId/status', orderController.updateOrderStatus.bind(orderCon
 router.patch('/:orderId/approve', orderController.approveOrder.bind(orderController));
 
 router.get('/:orderId/items', orderController.getOrderItems.bind(orderController));
+
 
 module.exports = router;

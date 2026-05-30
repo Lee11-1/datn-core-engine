@@ -462,6 +462,94 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
   }
   }
 
+  async getTopRevenueZones(){
+    try {
+      const orderRepo = getRepository('Order');
+      const result = await orderRepo
+        .createQueryBuilder('order')
+        .leftJoin('order.session', 'session')
+        .leftJoin('session.schedule', 'schedule')
+        .leftJoin('schedule.zone', 'zone')
+        .leftJoin('schedule.user', 'user')
+        .select('zone.id', 'zoneId')
+        .addSelect('zone.name', 'zoneName')
+        .addSelect('SUM(order.finalAmount)', 'totalRevenue')
+        .addSelect('user.id', 'userId')
+        .addSelect('user.phone', 'userPhone')
+        .addSelect('user.fullName', 'userFullName')
+        .where('order.status = :status', { status: 'approved' })
+        .andWhere('schedule.status = :scheduleStatus', { scheduleStatus: 'ongoing' })
+        .groupBy('zone.id')
+        .addGroupBy('user.id')
+        .addGroupBy('user.fullName')
+        .addGroupBy('user.phone')
+        .orderBy('SUM(order.finalAmount)', 'DESC')
+        .limit(3)
+        .getRawMany();
+
+      return result;
+    }catch(error){
+      throw error;
+    }
+  }
+
+  async getOrderStatistics(query) {
+    try {
+     const { zoneId } = query
+      const orderRepo = getRepository('Order');
+
+      const queryBuilder = orderRepo
+        .createQueryBuilder('order')
+        .leftJoin('order.session', 'session')
+        .leftJoin('session.schedule', 'schedule')
+
+        .where('schedule.status = :scheduleStatus', {
+          scheduleStatus: 'ongoing'
+        })
+
+        .select('COUNT(order.id)', 'totalOrders')
+
+        .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'approved' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'approvedOrders')
+
+        .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'rejected' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'rejectedOrders')
+
+        .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'pending' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'pendingOrders')
+
+      if (zoneId) {
+        queryBuilder.andWhere('schedule.zoneId = :zoneId', {
+          zoneId
+        })
+      }
+
+      const result = await queryBuilder.getRawOne()
+      return result;
+    }catch (error) {
+      throw error;
+    }
+  }
+
+
 }
 
 module.exports = new OrderService();

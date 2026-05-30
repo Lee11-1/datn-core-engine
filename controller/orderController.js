@@ -192,6 +192,41 @@ class OrderController {
       };
     }
   }
+
+   async getTopRevenueZones(ctx){
+    try {
+      const result = await orderService.getTopRevenueZones(); 
+      ctx.body = {
+        success: true,
+        data: result
+      };
+    }
+    catch (error) {
+        ctx.status = 500;
+        ctx.body = {
+          success: false,
+          message: error.message
+        };
+      } 
+  }
+
+  async getOrderStatistics(ctx) {
+    try {
+      const result = await orderService.getOrderStatistics(ctx.request.query);
+      ctx.body = {
+        success: true,
+        data: result
+      };
+      
+    }
+    catch (error) {      
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: error.message
+      };
+    }
+  }
 }
 
 module.exports = new OrderController();
