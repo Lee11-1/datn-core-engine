@@ -146,6 +146,33 @@ class OrderService {
       .where('session.scheduleId = :scheduleId', { scheduleId })
       .select('customer.id', 'customerId')
       .addSelect('COUNT(order.id)', 'totalOrders')
+      .addSelect(`
+        SUM(
+          CASE
+            WHEN order.status = 'approved' THEN 1
+            ELSE 0
+          END
+        )
+      `, 'approvedOrders')
+
+      .addSelect(`
+        SUM(
+          CASE
+            WHEN order.status = 'rejected'
+            THEN 1
+            ELSE 0
+          END
+        )
+      `, 'rejectedOrders')
+
+      .addSelect(`
+        SUM(
+          CASE
+            WHEN order.status = 'pending' THEN 1
+            ELSE 0
+          END
+        )
+      `, 'pendingOrders')
       .groupBy('customer.id')
       .getRawMany();
 
@@ -301,9 +328,9 @@ async getOrderItems(orderId){
   }
 
  
-async getOrdersByZoneWithCustomers(zoneId, query = {}) {
+async getTopCustomersOrderByZone(zoneId, query = {}) {
   try {
-    const { startDate, endDate, status = 'approved' } = query;
+    const { startDate, endDate, status = 'approved', scheduleId } = query;
 
     const orderRepo = getRepository('Order');
 
@@ -319,10 +346,13 @@ async getOrdersByZoneWithCustomers(zoneId, query = {}) {
         'customer.phone as phone',
         'customer.email as email',
         'customer.address as address',
-        'customer.location as location',
         'COUNT(order.id) as orderCount',
         'SUM(order.finalAmount) as totalRevenue'
       ])
+      .addSelect(
+        'ST_AsGeoJSON(customer.location)',
+        'location'
+      )
 
       .where('zone.id = :zoneId', { zoneId })
 
@@ -333,7 +363,8 @@ async getOrdersByZoneWithCustomers(zoneId, query = {}) {
       .addGroupBy('customer.address')
       .addGroupBy('customer.location')
 
-      .orderBy('totalRevenue', 'DESC');
+      .orderBy('totalRevenue', 'DESC')
+      .limit(3);
 
     if (status) {
       queryBuilder.andWhere('order.status = :status', { status });
@@ -351,6 +382,12 @@ async getOrdersByZoneWithCustomers(zoneId, query = {}) {
         'order.createdAt <= :endDate',
         { endDate }
       );
+    }
+
+    if (scheduleId) {
+      queryBuilder
+        .leftJoin('order.session', 'session')
+        .andWhere('session.scheduleId = :scheduleId', { scheduleId });
     }
 
     const result = await queryBuilder.getRawMany();

@@ -129,12 +129,12 @@ class OrderController {
     }
   }
 
-  async getOrdersByZoneWithCustomers(ctx) {
+  async getTopCustomersOrderByZone(ctx) {
     try {
       const { zoneId } = ctx.params;
       const { startDate, endDate, status } = ctx.query;
 
-      const orders = await orderService.getOrdersByZoneWithCustomers(zoneId, {
+      const orders = await orderService.getTopCustomersOrderByZone(zoneId, {
         startDate,
         endDate,
         status
