@@ -141,7 +141,7 @@ class ScheduleService {
         note: true,
         createdAt: true,
         user: { id: true, username: true, fullName: true },
-        zone: { id: true, name: true },
+        zone: { id: true, name: true, boundary: true },
         title: true
       }
     });

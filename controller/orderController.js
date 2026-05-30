@@ -96,7 +96,7 @@ class OrderController {
   async getOrdersByUser(ctx) {
     try {
       const { userId } = ctx.params;
-      const orders = await orderService.getOrdersByUser(userId);
+      const orders = await orderService.getOrdersByUser(userId, ctx.request.query );
 
       ctx.body = {
         success: true,
