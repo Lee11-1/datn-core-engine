@@ -143,9 +143,12 @@ class OrderService {
       .createQueryBuilder('order')
       .leftJoin('order.session', 'session')
       .leftJoin('order.customer', 'customer')
+      .leftJoin('order.commission', 'commission')
       .where('session.scheduleId = :scheduleId', { scheduleId })
       .select('customer.id', 'customerId')
       .addSelect('COUNT(order.id)', 'totalOrders')
+      .addSelect('SUM(order.finalAmount)', 'totalAmount')
+      .addSelect('SUM(commission.commissionAmount)', 'totalCommission')
       .addSelect(`
         SUM(
           CASE
@@ -502,13 +505,11 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
         .createQueryBuilder('order')
         .leftJoin('order.session', 'session')
         .leftJoin('session.schedule', 'schedule')
-
         .where('schedule.status = :scheduleStatus', {
           scheduleStatus: 'ongoing'
         })
 
         .select('COUNT(order.id)', 'totalOrders')
-
         .addSelect(`
           SUM(
             CASE

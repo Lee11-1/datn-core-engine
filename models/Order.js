@@ -138,6 +138,12 @@ module.exports = new EntitySchema({
       joinColumn: { name: 'approved_by' },
       nullable: true,
     },
+     commission: {
+      type: 'one-to-one',
+      target: 'Commission',
+      joinColumn: { name: 'id' },
+      nullable: true,
+    },
     items: {
       type: 'one-to-many',
       target: 'OrderItem',

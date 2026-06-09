@@ -74,7 +74,7 @@ module.exports = new EntitySchema({
       joinColumn: { name: 'user_id' },
     },
     order: {
-      type: 'many-to-one',
+      type: 'one-to-one',
       target: 'Order',
       joinColumn: { name: 'order_id' },
     },

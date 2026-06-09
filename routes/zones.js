@@ -12,5 +12,4 @@ router.put('/:id', zoneController.updateZone.bind(zoneController));
 router.delete('/:id', zoneController.deleteZone.bind(zoneController));
 
 router.post('/sync', zoneController.syncZones.bind(zoneController));
-
 module.exports = router;

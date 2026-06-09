@@ -22,10 +22,6 @@ module.exports = new EntitySchema({
       type: 'uuid',
       nullable: true,
     },
-    scheduledDate: {
-      name: 'scheduled_date',
-      type: 'date',
-    },
     startDate: {
       name: 'start_date',
       type: 'date',
@@ -94,7 +90,6 @@ module.exports = new EntitySchema({
   indices: [
     { columns: ['userId'] },
     { columns: ['zoneId'] },
-    { columns: ['scheduledDate'] },
     { columns: ['status'] },
   ],
 });
