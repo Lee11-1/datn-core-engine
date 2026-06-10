@@ -13,25 +13,21 @@ class SellingSessionService {
     const userRepo = getRepository('User');
     const customerRepo = getRepository('Customer');
 
-    // Validate schedule exists
     const schedule = await scheduleRepo.findOne({ where: { id: scheduleId } });
     if (!schedule) {
       throw new Error('Schedule not found');
     }
 
-    // Validate user exists
     const user = await userRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
     }
 
-    // Validate customer exists
     const customer = await customerRepo.findOne({ where: { id: customerId } });
     if (!customer) {
       throw new Error('Customer not found');
     }
 
-    // Create location point from coordinates
     let location = null;
     if (checkinLocation && checkinLocation.coordinates) {
       location = {
@@ -61,29 +57,6 @@ class SellingSessionService {
     });
 
     return sessionWithRelations;
-  }
-
-  async getSellingSessionsBySchedule(scheduleId, query = {}) {
-    const { page = 1, limit = 10 } = query;
-    const sessionRepo = getRepository('SellingSession');
-
-    const [sessions, total] = await sessionRepo.findAndCount({
-      where: { scheduleId },
-      relations: ['schedule', 'user', 'customer'],
-      take: parseInt(limit),
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      order: { checkinAt: 'DESC' },
-    });
-
-    return {
-      sessions,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit)),
-      },
-    };
   }
 
   async getSellingSessionsByCustomer(customerId) {

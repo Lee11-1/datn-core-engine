@@ -8,8 +8,6 @@ const router = new Router({
 
 router.post('/', scheduleController.createSchedule.bind(scheduleController));
 
-router.post('/multiple/create', scheduleController.createMultiSchedules.bind(scheduleController));
-
 router.get('/', scheduleController.getSchedules.bind(scheduleController));
 
 router.get('/zone/:zoneId', scheduleController.getSchedulesByZone.bind(scheduleController));

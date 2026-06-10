@@ -5,9 +5,7 @@ const Product = require('../models/Product');
 const Warehouse = require('../models/Warehouse');
 const { AppDataSource } = require('../config/database');
 class InventoryService {
-  /**
-   * Get inventory records with filters and pagination
-   */
+
   async getInventory(query) {
     try {
       const { search_text, page = 1, limit = 10, productId, warehouseId } = query;
@@ -53,51 +51,6 @@ class InventoryService {
     }
   }
 
-  /**
-   * Get single inventory record
-   */
-  async getInventoryById(inventoryId) {
-    try {
-      const inventoryRepository = getRepository(Inventory);
-      const inventory = await inventoryRepository.findOne({
-        where: { id: inventoryId },
-        relations: ['product', 'warehouse'],
-      });
-
-      if (!inventory) {
-        throw new Error('Inventory not found');
-      }
-
-      return inventory;
-    } catch (error) {
-      throw new Error(`Failed to get inventory: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get inventory by product and warehouse
-   */
-  async getInventoryByProductAndWarehouse(productId, warehouseId) {
-    try {
-      const inventoryRepository = getRepository(Inventory);
-      const inventory = await inventoryRepository.findOne({
-        where: { productId, warehouseId },
-        relations: ['product', 'warehouse'],
-      });
-
-      if (!inventory) {
-        throw new Error('Inventory not found for this product and warehouse');
-      }
-
-      return inventory;
-    } catch (error) {
-      throw new Error(`Failed to get inventory: ${error.message}`);
-    }
-  }
-
-  /**
-   * Check available quantity (quantity - reservedQty)
-   */
   async checkAvailableQuantity(productId, warehouseId) {
     try {
       const inventory = await this.getInventoryByProductAndWarehouse(productId, warehouseId);
@@ -147,51 +100,6 @@ class InventoryService {
       return {
         success: true,
         message: `Reserved ${quantity} units successfully`,
-        inventory: updated,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async deductQuantity(productId, warehouseId, quantity, userId = null, orderId = null) {
-    try {
-      const inventoryRepository = getRepository(Inventory);
-      const inventory = await this.getInventoryByProductAndWarehouse(productId, warehouseId);
-
-      // Check if reserved quantity is sufficient
-      if (inventory.reservedQty < quantity) {
-        throw new Error(
-          `Insufficient reserved quantity. Reserved: ${inventory.reservedQty}, Requested: ${quantity}`
-        );
-      }
-
-      // Update quantity and reserved quantity
-      const previousQty = inventory.quantity;
-      inventory.quantity = inventory.quantity - quantity;
-      inventory.reservedQty = inventory.reservedQty - quantity;
-
-      const updated = await inventoryRepository.save(inventory);
-
-      // Log activity
-      await this.logInventoryActivity(
-        'DEDUCT',
-        productId,
-        warehouseId,
-        quantity,
-        userId,
-        {
-          orderId,
-          previousQty,
-          newQty: inventory.quantity,
-          previousReserved: inventory.reservedQty + quantity,
-          newReserved: inventory.reservedQty,
-        }
-      );
-
-      return {
-        success: true,
-        message: `Deducted ${quantity} units successfully`,
         inventory: updated,
       };
     } catch (error) {
@@ -271,166 +179,6 @@ class InventoryService {
     }
   }
 
-  async releaseReservedQuantity(productId, warehouseId, quantity, userId = null, orderId = null) {
-    try {
-      const inventoryRepository = getRepository(Inventory);
-      const inventory = await this.getInventoryByProductAndWarehouse(productId, warehouseId);
-
-      // Check if reserved quantity is sufficient
-      if (inventory.reservedQty < quantity) {
-        throw new Error(
-          `Cannot release ${quantity} units. Only ${inventory.reservedQty} units reserved`
-        );
-      }
-
-      // Update reserved quantity
-      inventory.reservedQty = inventory.reservedQty - quantity;
-      const updated = await inventoryRepository.save(inventory);
-
-      // Log activity
-      await this.logInventoryActivity(
-        'RELEASE',
-        productId,
-        warehouseId,
-        quantity,
-        userId,
-        {
-          orderId,
-          previousReserved: inventory.reservedQty + quantity,
-          newReserved: inventory.reservedQty,
-        }
-      );
-
-      return {
-        success: true,
-        message: `Released ${quantity} reserved units successfully`,
-        inventory: updated,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getInventoryMovementHistory(filters = {}) {
-    try {
-      const activityLogRepository = getRepository(ActivityLog);
-      const query = activityLogRepository.createQueryBuilder('log')
-        .where('log.action IN (:...actions)', {
-          actions: ['RESERVE', 'DEDUCT', 'ADD', 'RELEASE'],
-        })
-        .orderBy('log.createdAt', 'DESC');
-
-      if (filters.productId) {
-        query.andWhere('log.metadata @> :metadata', {
-          metadata: JSON.stringify({ productId: filters.productId }),
-        });
-      }
-
-      if (filters.warehouseId) {
-        query.andWhere('log.metadata @> :metadata', {
-          metadata: JSON.stringify({ warehouseId: filters.warehouseId }),
-        });
-      }
-
-      if (filters.action) {
-        query.andWhere('log.action = :action', { action: filters.action });
-      }
-
-      if (filters.limit) {
-        query.limit(filters.limit);
-      }
-
-      const history = await query.getMany();
-      return history;
-    } catch (error) {
-      throw new Error(`Failed to get inventory movement history: ${error.message}`);
-    }
-  }
-  async logInventoryActivity(action, productId, warehouseId, quantity, userId = null, metadata = {}) {
-    try {
-      const activityLogRepository = getRepository(ActivityLog);
-
-      const log = activityLogRepository.create({
-        userId,
-        action,
-        entityType: 'Inventory',
-        level: 'info',
-        metadata: {
-          productId,
-          warehouseId,
-          quantity,
-          ...metadata,
-        },
-      });
-
-      await activityLogRepository.save(log);
-    } catch (error) {
-      console.error(`Failed to log inventory activity: ${error.message}`);
-    }
-  }
-
-  async getLowStockProducts(threshold = 10) {
-    try {
-      const inventoryRepository = getRepository(Inventory);
-      const lowStock = await inventoryRepository
-        .createQueryBuilder('inv')
-        .leftJoinAndSelect('inv.product', 'product')
-        .leftJoinAndSelect('inv.warehouse', 'warehouse')
-        .where('inv.quantity - inv.reserved_qty <= :threshold', { threshold })
-        .orderBy('inv.quantity', 'ASC')
-        .getMany();
-
-      return lowStock;
-    } catch (error) {
-      throw new Error(`Failed to get low stock products: ${error.message}`);
-    }
-  }
-  async getInventorySummaryByWarehouse(warehouseId) {
-    try {
-      const inventoryRepository = getRepository(Inventory);
-      const summary = await inventoryRepository
-        .createQueryBuilder('inv')
-        .leftJoinAndSelect('inv.product', 'product')
-        .leftJoinAndSelect('inv.warehouse', 'warehouse')
-        .where('inv.warehouseId = :warehouseId', { warehouseId })
-        .select([
-          'warehouse.id',
-          'warehouse.name',
-          'COUNT(inv.id) as totalSKUs',
-          'SUM(inv.quantity) as totalQuantity',
-          'SUM(inv.reserved_qty) as totalReserved',
-        ])
-        .groupBy('warehouse.id, warehouse.name')
-        .getRawOne();
-
-      return summary || null;
-    } catch (error) {
-      throw new Error(`Failed to get warehouse inventory summary: ${error.message}`);
-    }
-  }
-
-  
-  async transferInventory(productId, fromWarehouseId, toWarehouseId, quantity, userId = null) {
-    try {
-      await this.deductQuantity(productId, fromWarehouseId, quantity, userId, null);
-
-      await this.createQuantity(
-        productId,
-        toWarehouseId,
-        quantity,
-        userId,
-        `Transferred from warehouse ${fromWarehouseId}`
-      );
-
-      return {
-        success: true,
-        message: `Transferred ${quantity} units successfully`,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async updateInventory(inventoryId, updateData = {}) {
     try {
       const inventoryRepository = getRepository(Inventory);
@@ -491,8 +239,6 @@ class InventoryService {
       throw error;
     }
   }
-
-
 }
 
 module.exports = new InventoryService();

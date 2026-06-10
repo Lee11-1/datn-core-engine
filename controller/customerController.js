@@ -85,29 +85,6 @@ class CustomerController {
     }
   }
 
-  async searchCustomers(ctx) {
-    try {
-      const { keyword, limit = 20 } = ctx.query;
-
-      if (!keyword || keyword.trim() === '') {
-        throw new Error('Search keyword is required');
-      }
-
-      const customers = await customerService.searchCustomers(keyword, parseInt(limit));
-
-      ctx.body = {
-        success: true,
-        data: customers,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async getCustomersByZone(ctx) {
     try {
       const result = await customerService.getCustomersByZone(  ctx.query );
@@ -144,70 +121,6 @@ class CustomerController {
       };
     } catch (error) {
       ctx.status = 500;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async getCustomerByPhone(ctx) {
-    try {
-      const { phone } = ctx.query;
-
-      if (!phone || phone.trim() === '') {
-        throw new Error('Phone number is required');
-      }
-
-      const customer = await customerService.getCustomerByPhone(phone);
-
-      if (!customer) {
-        ctx.status = 404;
-        ctx.body = {
-          success: false,
-          message: 'Customer not found',
-        };
-        return;
-      }
-
-      ctx.body = {
-        success: true,
-        data: customer,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async getCustomerByEmail(ctx) {
-    try {
-      const { email } = ctx.query;
-
-      if (!email || email.trim() === '') {
-        throw new Error('Email is required');
-      }
-
-      const customer = await customerService.getCustomerByEmail(email);
-
-      if (!customer) {
-        ctx.status = 404;
-        ctx.body = {
-          success: false,
-          message: 'Customer not found',
-        };
-        return;
-      }
-
-      ctx.body = {
-        success: true,
-        data: customer,
-      };
-    } catch (error) {
-      ctx.status = 400;
       ctx.body = {
         success: false,
         message: error.message,

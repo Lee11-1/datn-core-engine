@@ -35,12 +35,16 @@ class ProductService {
   }
 
   async getProducts(query) {
-    const { page = 1, limit = 10, search_text } = query;
+    const { page = 1, limit = 10, search_text, categoryIds } = query;
     const productRepo = getRepository('Product');
 
     let queryBuilder = productRepo.createQueryBuilder('product')
       .where('product.deleted = :deleted', { deleted: false })
 
+    if (categoryIds && categoryIds.length > 0) {
+      const ids = categoryIds.split(',');
+      queryBuilder = queryBuilder.andWhere('product.categoryId IN (:...ids)', { ids });
+    }
     if (search_text) {
       queryBuilder = queryBuilder.andWhere(
         '(product.name ILIKE :search_text OR product.sku ILIKE :search_text OR product.description ILIKE :search_text)',
@@ -66,7 +70,7 @@ class ProductService {
     };
   }
 
-    async getProductsInventory(query) {
+  async getProductsInventory(query) {
     const { page = 1, limit = 10, categoryIds, search_text, warehouse_id } = query;
     const productRepo = getRepository('Product');
     let queryBuilder = productRepo.createQueryBuilder('product')
@@ -197,28 +201,6 @@ class ProductService {
     return await productRepo.save(product);
   }
 
-  async getProductsBySKU(skus) {
-    const productRepo = getRepository('Product');
-    return await productRepo.find({
-      where: skus.map(sku => ({ sku })),
-      relations: ['category'],
-    });
-  }
-
-  async searchProducts(keyword, limit = 20) {
-    const productRepo = getRepository('Product');
-    return await productRepo
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .where('product.isActive = true')
-      .andWhere(
-        '(product.name ILIKE :keyword OR product.sku ILIKE :keyword OR product.description ILIKE :keyword)',
-        { keyword: `%${keyword}%` }
-      )
-      .orderBy('product.name', 'ASC')
-      .take(limit)
-      .getMany();
-  }
 
   async activateProduct(id) {
     const productRepo = getRepository('Product');

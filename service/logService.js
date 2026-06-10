@@ -66,9 +66,6 @@ class LogService {
     }
   }
 
-  /**
-   * Get log by ID
-   */
   static async getLogById(id) {
     try {
       const repository = getRepository('ActivityLog');
@@ -82,9 +79,6 @@ class LogService {
     }
   }
 
-  /**
-   * Get logs by user ID
-   */
   static async getLogsByUserId(userId, options = {}) {
     try {
       const { limit = 50, offset = 0 } = options;
@@ -98,9 +92,6 @@ class LogService {
     }
   }
 
-  /**
-   * Get logs by entity type and ID
-   */
   static async getLogsByEntity(entityType, entityId, options = {}) {
     try {
       const { limit = 50, offset = 0 } = options;
@@ -114,9 +105,6 @@ class LogService {
     }
   }
 
-  /**
-   * Delete old logs (older than specified days)
-   */
   static async deleteOldLogs(daysOld = 90) {
     try {
       const repository = getRepository('ActivityLog');

@@ -21,27 +21,6 @@ class ScheduleController {
     }
   }
 
-  async createMultiSchedules(ctx) {
-    try {
-      const bulkScheduleData = ctx.request.body;
-      const result = await scheduleService.createMultiSchedules(bulkScheduleData);
-
-      ctx.status = 201;
-      ctx.body = {
-        success: true,
-        message: `${result.count} schedules created successfully`,
-        data: result.schedules,
-        count: result.count,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async getSchedules(ctx) {
     try {
       const result = await scheduleService.getSchedules(ctx.query);
@@ -171,25 +150,6 @@ class ScheduleController {
     }
   }
 
-  async getSchedulesByDate(ctx) {
-    try {
-      const { date } = ctx.params;
-      const result = await scheduleService.getSchedulesByDate(date, ctx.query);
-
-      ctx.body = {
-        success: true,
-        data: result.schedules,
-        pagination: result.pagination
-      };
-    } catch (error) {
-      ctx.status = 500;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async changeScheduleStatus(ctx) {
     try {
       const { id } = ctx.params;
@@ -219,37 +179,7 @@ class ScheduleController {
       };
     }
   }
-
-  async assignScheduleToWarehouse(ctx) {
-    try {
-      const { id } = ctx.params;
-      const { warehouseId } = ctx.request.body;
-
-      if (!warehouseId) {
-        ctx.status = 400;
-        ctx.body = {
-          success: false,
-          message: 'Warehouse ID is required',
-        };
-        return;
-      }
-
-      const updatedSchedule = await scheduleService.assignScheduleToWarehouse(id, warehouseId);
-
-      ctx.body = {
-        success: true,
-        message: 'Schedule assigned to warehouse successfully',
-        data: updatedSchedule,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
+  
   async getStatistics(ctx) {
     try {
       const statistics = await scheduleService.getStatistics(ctx.query);

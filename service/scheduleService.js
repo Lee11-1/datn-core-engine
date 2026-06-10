@@ -1,58 +1,6 @@
 const { getRepository } = require('../config/typeorm');
 
 class ScheduleService {
-  async createMultiSchedules(scheduleData) {
-    const { userId, zoneId, warehouseId, scheduledDate, startTime, endTime, status, note, createdBy } = scheduleData;
-
-    if (!userId || !zoneId || !scheduledDate || !startTime || !endTime || !createdBy) {
-      throw new Error('Missing required fields: userId, zoneId, scheduledDate, startTime, endTime, createdBy');
-    }
-
-    if (!this.isValidTimeFormat(startTime) || !this.isValidTimeFormat(endTime)) {
-      throw new Error('Invalid time format. Use HH:mm:ss format');
-    }
-
-    if (startTime >= endTime) {
-      throw new Error('Start time must be before end time');
-    }
-
-    const scheduleRepo = getRepository('Schedule');
-    
-    const userRepo = getRepository('User');
-    const zoneRepo = getRepository('Zone');
-    
-    const user = await userRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const zone = await zoneRepo.findOne({ where: { id: zoneId } });
-    if (!zone) {
-      throw new Error('Zone not found');
-    }
-
-    if (warehouseId) {
-      const warehouseRepo = getRepository('Warehouse');
-      const warehouse = await warehouseRepo.findOne({ where: { id: warehouseId } });
-      if (!warehouse) {
-        throw new Error('Warehouse not found');
-      }
-    }
-
-    const newSchedule = scheduleRepo.create({
-      userId,
-      zoneId,
-      warehouseId: warehouseId || null,
-      scheduledDate,
-      startTime,
-      endTime,
-      status: status || 'planned',
-      note: note || null,
-      createdBy,
-    });
-
-    return await scheduleRepo.save(newSchedule);
-  }
 
   async createSchedule(scheduleData) {
     const { userId, zoneId, warehouseId, startDate, endDate, status, note, createdBy, title } = scheduleData;
@@ -374,34 +322,6 @@ class ScheduleService {
     };
   }
 
-  async getSchedulesByDate(scheduledDate, query = {}) {
-    const { page = 1, limit = 10, userId, zoneId, status } = query;
-    const scheduleRepo = getRepository('Schedule');
-
-    const where = { scheduledDate };
-    if (userId) where.userId = userId;
-    if (zoneId) where.zoneId = zoneId;
-    if (status) where.status = status;
-
-    const [schedules, total] = await scheduleRepo.findAndCount({
-      where,
-      relations: ['user', 'zone', 'warehouse', 'creator'],
-      take: parseInt(limit),
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      order: { startTime: 'ASC' },
-    });
-
-    return {
-      schedules,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / parseInt(limit))
-      }
-    };
-  }
-
   async changeScheduleStatus(id, status) {
     const validStatuses = ['planned', 'ongoing', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
@@ -416,25 +336,6 @@ class ScheduleService {
     }
 
     schedule.status = status;
-    return await scheduleRepo.save(schedule);
-  }
-
-  async assignScheduleToWarehouse(scheduleId, warehouseId) {
-    const scheduleRepo = getRepository('Schedule');
-    const schedule = await scheduleRepo.findOne({ where: { id: scheduleId } });
-
-    if (!schedule) {
-      throw new Error('Schedule not found');
-    }
-
-    const warehouseRepo = getRepository('Warehouse');
-    const warehouse = await warehouseRepo.findOne({ where: { id: warehouseId } });
-
-    if (!warehouse) {
-      throw new Error('Warehouse not found');
-    }
-
-    schedule.warehouseId = warehouseId;
     return await scheduleRepo.save(schedule);
   }
 

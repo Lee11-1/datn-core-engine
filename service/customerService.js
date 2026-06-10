@@ -121,21 +121,6 @@ class CustomerService {
     return await customerRepo.remove(customer);
   }
 
-  async searchCustomers(keyword, limit = 20) {
-    const customerRepo = getRepository('Customer');
-    return await customerRepo
-      .createQueryBuilder('customer')
-      .leftJoinAndSelect('customer.zone', 'zone')
-      .leftJoinAndSelect('customer.createdByUser', 'createdByUser')
-      .where(
-        '(customer.fullName ILIKE :keyword OR customer.phone ILIKE :keyword OR customer.email ILIKE :keyword)',
-        { keyword: `%${keyword}%` }
-      )
-      .orderBy('customer.fullName', 'ASC')
-      .take(limit)
-      .getMany();
-  }
-
   async getCustomersByZone(query) {
     const { page = 1, limit = 10, zoneId } = query;
 
@@ -170,22 +155,6 @@ class CustomerService {
     });
 
     return { customers, total };
-  }
-
-  async getCustomerByPhone(phone) {
-    const customerRepo = getRepository('Customer');
-    return await customerRepo.findOne({
-      where: { phone },
-      relations: ['zone', 'createdByUser'],
-    });
-  }
-
-  async getCustomerByEmail(email) {
-    const customerRepo = getRepository('Customer');
-    return await customerRepo.findOne({
-      where: { email },
-      relations: ['zone', 'createdByUser'],
-    });
   }
 }
 

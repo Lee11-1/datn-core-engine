@@ -81,20 +81,6 @@ class CategoryService {
     };
   }
 
-  async getCategoryById(id) {
-    const categoryRepo = getRepository('Category');
-    const category = await categoryRepo.findOne({
-      where: { id },
-      relations: ['parent', 'children'],
-    });
-
-    if (!category) {
-      throw new Error('Category not found');
-    }
-
-    return category;
-  }
-
   async updateCategory(id, updateData) {
     const { name, slug, parentId, sortOrder, isActive } = updateData;
 
@@ -153,114 +139,6 @@ class CategoryService {
     }
 
     return await categoryRepo.remove(category);
-  }
-
-  async getCategoryTree() {
-    const categoryRepo = getRepository('Category');
-    const categories = await categoryRepo.find({
-      where: { isActive: true },
-      relations: ['parent', 'children'],
-      order: {
-        sortOrder: 'ASC',
-        name: 'ASC',
-      },
-    });
-
-    // Build tree structure
-    const map = {};
-    const tree = [];
-
-    // First pass: create map
-    categories.forEach(category => {
-      map[category.id] = { ...category, children: [] };
-    });
-
-    // Second pass: build tree
-    categories.forEach(category => {
-      if (category.parentId && map[category.parentId]) {
-        map[category.parentId].children.push(map[category.id]);
-      } else {
-        tree.push(map[category.id]);
-      }
-    });
-
-    return tree;
-  }
-
-  async getRootCategories() {
-    const categoryRepo = getRepository('Category');
-    const categories = await categoryRepo.find({
-      where: {
-        parentId: null,
-        isActive: true,
-      },
-      relations: ['children'],
-      order: {
-        sortOrder: 'ASC',
-        name: 'ASC',
-      },
-    });
-
-    return categories;
-  }
-
-  async getChildCategories(parentId) {
-    const categoryRepo = getRepository('Category');
-    const categories = await categoryRepo.find({
-      where: {
-        parentId,
-        isActive: true,
-      },
-      relations: ['parent'],
-      order: {
-        sortOrder: 'ASC',
-        name: 'ASC',
-      },
-    });
-
-    return categories;
-  }
-
-  async activateCategory(id) {
-    const categoryRepo = getRepository('Category');
-    const category = await categoryRepo.findOne({
-      where: { id }
-    });
-
-    if (!category) {
-      throw new Error('Category not found');
-    }
-
-    category.isActive = true;
-    return await categoryRepo.save(category);
-  }
-
-  async deactivateCategory(id) {
-    const categoryRepo = getRepository('Category');
-    const category = await categoryRepo.findOne({
-      where: { id }
-    });
-
-    if (!category) {
-      throw new Error('Category not found');
-    }
-
-    category.isActive = false;
-    return await categoryRepo.save(category);
-  }
-
-  async reorderCategories(id, newSortOrder) {
-    const categoryRepo = getRepository('Category');
-    const category = await categoryRepo.findOne({
-      where: { id }
-    });
-
-    if (!category) {
-      throw new Error('Category not found');
-    }
-
-    category.sortOrder = newSortOrder;
-    return await categoryRepo.save(category);
   }
 }
 

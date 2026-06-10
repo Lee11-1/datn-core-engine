@@ -1,10 +1,7 @@
 const LogService = require('../service/logService');
 
 class LogController {
-  /**
-   * Create activity log
-   * POST /logs
-   */
+
   static async createLog(ctx) {
     try {
       const payload = ctx.request.body;
@@ -79,10 +76,6 @@ class LogController {
     }
   }
 
-  /**
-   * Get log by ID
-   * GET /logs/:id
-   */
   static async getLogById(ctx) {
     try {
       const { id } = ctx.params;
@@ -114,10 +107,6 @@ class LogController {
     }
   }
 
-  /**
-   * Get logs by entity
-   * GET /logs/entity/:entityType/:entityId
-   */
   static async getLogsByEntity(ctx) {
     try {
       const { entityType, entityId } = ctx.params;

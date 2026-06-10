@@ -124,52 +124,6 @@ class ProductController {
     }
   }
 
-  async getProductsBySKU(ctx) {
-    try {
-      const { skus } = ctx.request.body;
-      
-      if (!skus || !Array.isArray(skus) || skus.length === 0) {
-        throw new Error('Invalid SKUs: must provide a non-empty array');
-      }
-
-      const products = await productService.getProductsBySKU(skus);
-
-      ctx.body = {
-        success: true,
-        data: products,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
-  async searchProducts(ctx) {
-    try {
-      const { keyword, limit = 20 } = ctx.query;
-
-      if (!keyword || keyword.trim() === '') {
-        throw new Error('Search keyword is required');
-      }
-
-      const products = await productService.searchProducts(keyword, parseInt(limit));
-
-      ctx.body = {
-        success: true,
-        data: products,
-      };
-    } catch (error) {
-      ctx.status = 400;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async activateProduct(ctx) {
     try {
       const { id } = ctx.params;

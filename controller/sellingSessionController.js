@@ -21,25 +21,6 @@ class SellingSessionController {
     }
   }
 
-  async getSellingSessionsBySchedule(ctx) {
-    try {
-      const { scheduleId } = ctx.params;
-      const result = await sellingSessionService.getSellingSessionsBySchedule(scheduleId, ctx.query);
-
-      ctx.body = {
-        success: true,
-        data: result.sessions,
-        pagination: result.pagination,
-      };
-    } catch (error) {
-      ctx.status = 500;
-      ctx.body = {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
-
   async getSellingSessionsByCustomer(ctx) {
     try {
       const { customerId } = ctx.params;
