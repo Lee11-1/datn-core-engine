@@ -14,6 +14,7 @@ const TypeORMModels = {
   OrderItem: require('./OrderItem'),
   Commission: require('./Commission'),
   ActivityLog: require('./ActivityLog'),
+  Promotion: require('./Promotion'),
 };
 
 module.exports = { TypeORMModels }

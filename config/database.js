@@ -24,7 +24,7 @@ const createPostgresConfig = () => {
 const entityFiles = [
   'User', 'RefreshToken', 'Zone', 'GeoDataUpdate', 'Warehouse',
   'Category', 'Product', 'Inventory', 'Customer', 'Schedule',
-  'SellingSession', 'Order', 'OrderItem', 'Commission', 'ActivityLog'
+  'SellingSession', 'Order', 'OrderItem', 'Commission', 'ActivityLog', 'Promotion'
 ].map(name => path.join(__dirname, '..', 'models', `${name}.js`));
 
 const AppDataSource = new DataSource({

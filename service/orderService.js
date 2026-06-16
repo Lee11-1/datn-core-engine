@@ -543,8 +543,21 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
         })
       }
 
-      const result = await queryBuilder.getRawOne()
-      return result;
+      const data1 = await queryBuilder.getRawOne()
+
+      const data2 = await orderRepo
+        .createQueryBuilder('order')
+        .leftJoin('order.session', 'session')
+        .leftJoin('session.schedule', 'schedule')
+        .where('schedule.status = :scheduleStatus', {
+          scheduleStatus: 'ongoing'
+        })
+        .select("DATE(order.createdAt)", "date")
+        .addSelect("COUNT(order.id)", "totalOrders")
+        .groupBy("DATE(order.createdAt)")
+        .orderBy("DATE(order.createdAt)", "ASC")
+        .getRawMany();
+      return {statistics: data1, dailyData: data2 };
     }catch (error) {
       throw error;
     }
