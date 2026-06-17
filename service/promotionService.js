@@ -46,7 +46,7 @@ class PromotionService {
   }
 
   async getPromotions(query) {
-    const { page = 1, limit = 10, search_text, status, include_expired = false } = query;
+    const { page = 1, limit = 10, search_text, status, include_expired = true } = query;
     const promotionRepo = getRepository('Promotion');
 
     let queryBuilder = promotionRepo.createQueryBuilder('promotion');
@@ -193,22 +193,29 @@ class PromotionService {
   }
 
   async getPromotionsByZone(zoneId, query = {}) {
-    const { page = 1, limit = 10 } = query;
+    const { page = 1, limit = 100 } = query;
     const promotionRepo = getRepository('Promotion');
     const now = new Date();
 
     let queryBuilder = promotionRepo.createQueryBuilder('promotion')
       .where('promotion.status = :status', { status: 'active' })
       .andWhere('promotion.start_at <= :now', { now })
-      .andWhere('promotion.end_at >= :now', { now });
+      .andWhere('promotion.end_at >= :now', { now })
+      .andWhere('promotion.used_count < promotion.usage_limit OR promotion.usage_limit IS NULL')
 
-    // Filter by zone if zoneIds contains the given zoneId
     if (zoneId) {
-      queryBuilder = queryBuilder
-        .andWhere(
-          `(promotion.zone_ids IS NULL OR promotion.zone_ids @> :zoneId)`,
-          { zoneId: JSON.stringify([zoneId]) }
-        );
+    queryBuilder = queryBuilder.andWhere(
+        `
+        (
+            promotion.zone_ids IS NULL
+            OR promotion.zone_ids @> :zoneId
+            OR promotion.zone_ids @> '["all"]'
+        )
+        `,
+        {
+        zoneId: JSON.stringify([zoneId])
+        }
+    );
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);

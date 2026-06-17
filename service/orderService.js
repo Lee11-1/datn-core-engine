@@ -1,88 +1,108 @@
 const { getRepository } = require('../config/typeorm');
 const { AppDataSource } = require('../config/database');
-
+const { In } = require('typeorm');
 class OrderService {
   async createOrder(orderData) {
-    const { sessionId, userId, customerId, orderPhotoUrl, orderLocation, items, totalAmount, discountAmount, finalAmount } = orderData;
+    const { sessionId, userId, customerId, orderPhotoUrl, orderLocation, items, totalAmount, discountAmount, finalAmount, promotionId } = orderData;
 
     if (!sessionId || !userId || !customerId || !orderPhotoUrl || !items || !items.length) {
       throw new Error('Missing required fields: sessionId, userId, customerId, orderPhotoUrl, items');
     }
 
-    const orderRepo = getRepository('Order');
-    const sessionRepo = getRepository('SellingSession');
-    const userRepo = getRepository('User');
-    const customerRepo = getRepository('Customer');
-    const productRepo = getRepository('Product');
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const session = await sessionRepo.findOne({ where: { id: sessionId } });
-    if (!session) {
-      throw new Error('Selling session not found');
-    }
-
-    const user = await userRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const customer = await customerRepo.findOne({ where: { id: customerId } });
-    if (!customer) {
-      throw new Error('Customer not found');
-    }
-
-    for (const item of items) {
-      const product = await productRepo.findOne({ where: { id: item.productId } });
-      if (!product) {
-        throw new Error(`Product ${item.productId} not found`);
+    try {
+      const [session, user, customer] = await Promise.all([
+        queryRunner.manager.findOne('SellingSession', { where: { id: sessionId } }),
+        queryRunner.manager.findOne('User', { where: { id: userId } }),
+        queryRunner.manager.findOne('Customer', { where: { id: customerId } })
+      ]);
+      if (!session) {
+        throw new Error('Selling session not found');
       }
-    }
+      if (!user) {
+        throw new Error('User not found');
+      }
+      if (!customer) {
+        throw new Error('Customer not found');
+      }
 
-    const orderCode = await this.generateOrderCode();
+      const productIds = items.map(item => item.productId);
 
-    let location = null;
-    if (orderLocation && orderLocation.coordinates) {
-      location = {
-        type: 'Point',
-        coordinates: orderLocation.coordinates,
-      };
-    }
-
-    const order = orderRepo.create({
-      orderCode,
-      sessionId,
-      userId,
-      customerId,
-      orderPhotoUrl,
-      orderLocation: location,
-      totalAmount: totalAmount || 0,
-      discountAmount: discountAmount || 0,
-      finalAmount: finalAmount || 0,
-      status: 'pending',
-    });
-
-    const savedOrder = await orderRepo.save(order);
-
-    const orderItemRepo = getRepository('OrderItem');
-    for (const item of items) {
-      const orderItem = orderItemRepo.create({
-        orderId: savedOrder.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        costPrice: item.costPrice || null,
-        discount: item.discount || 0,
-        subtotal: item.subtotal || (item.unitPrice * item.quantity),
-        warehouseId: item.warehouseId || null,
+      const products = await queryRunner.manager.find('Product', {
+        where: {
+          id: In(productIds)
+        }
       });
-      await orderItemRepo.save(orderItem);
+
+      if (products.length !== productIds.length) {
+        throw new Error('One or more products not found');
+      }
+      const orderCode = await this.generateOrderCode();
+
+      let location = null;
+      if (orderLocation && orderLocation.coordinates) {
+        location = {
+          type: 'Point',
+          coordinates: orderLocation.coordinates,
+        };
+      }
+
+      const orderRepository = queryRunner.manager.getRepository('Order');
+
+      const order = orderRepository.create({
+        orderCode,
+        sessionId,
+        userId,
+        customerId,
+        orderPhotoUrl,
+        orderLocation: location,
+        totalAmount,
+        discountAmount,
+        finalAmount,
+        status: 'pending',
+        promotionId: promotionId || null
+      });
+
+      const savedOrder = await orderRepository.save(order);
+
+      await queryRunner.manager
+      .getRepository('OrderItem')
+      .insert(
+        items.map(item => ({
+          orderId: savedOrder.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          costPrice: item.costPrice || null,
+          discount: item.discount || 0,
+          subtotal: item.subtotal || item.price * item.quantity,
+          warehouseId: item.warehouseId || null
+        }))
+      );
+
+      if (promotionId) {
+        await queryRunner.manager
+          .createQueryBuilder()
+          .update('Promotion')
+          .set({
+            usedCount: () => '"used_count" + 1'
+          })
+          .where('id = :id', { id: promotionId })
+          .execute();
+      }
+
+      await queryRunner.commitTransaction();
+
+      return savedOrder;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    const orderWithItems = await orderRepo.findOne({
-      where: { id: savedOrder.id },
-      relations: ['session', 'user', 'customer', 'items', 'items.product'],
-    });
-
-    return orderWithItems;
   }
 
   async getOrders(query) {

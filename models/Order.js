@@ -27,6 +27,11 @@ module.exports = new EntitySchema({
       name: 'customer_id',
       type: 'uuid',
     },
+    promotionId: {
+      name: 'promotion_id',
+      type: 'uuid',
+      nullable: true,
+    },
     warehouseId: {
       name: 'warehouse_id',
       type: 'uuid',
@@ -149,6 +154,12 @@ module.exports = new EntitySchema({
       target: 'OrderItem',
       inverseSide: 'order',
     },
+    promotion:{
+      type: 'many-to-one',
+      target: 'Promotion',
+      joinColumn: { name: 'promotion_id' },
+      nullable: true,
+    }
   },
   indices: [
     { columns: ['sessionId'] },
