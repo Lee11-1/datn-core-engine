@@ -63,7 +63,7 @@ class ScheduleService {
   }
 
   async getSchedules(query) {
-    const { page = 1, limit = 10, userId, zoneId, status, scheduledDate, warehouseId } = query;
+    const { page = 1, limit = 10, userId, zoneId, status, scheduledDate, warehouseId, startDate, endDate } = query;
     const scheduleRepo = getRepository('Schedule');
 
     const where = {};
@@ -72,6 +72,8 @@ class ScheduleService {
     if (warehouseId) where.warehouseId = warehouseId;
     if (status) where.status = status;
     if (scheduledDate) where.scheduledDate = scheduledDate;
+    if (startDate) where.startDate = startDate;
+    if (endDate) where.endDate = endDate;
 
     const [schedules, total] = await scheduleRepo.findAndCount({
       where,

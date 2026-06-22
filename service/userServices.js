@@ -1,5 +1,6 @@
 const { getRepository } = require('../config/typeorm');
 const bcrypt = require('bcryptjs');
+const { ILike } = require('typeorm');
 class UserService {
   async createUser(userData) {
     const { username, email, password, fullName, phone, role } = userData;
@@ -32,12 +33,30 @@ class UserService {
   }
 
   async getUsers(query) {
-    const { page = 1, limit = 10, role, status } = query;
+    const { page = 1, limit = 10, role, status, search_text } = query;
     const userRepo = getRepository('User');
     
-    const where = {};
+    let where = {};
+
     if (role) where.role = role;
     if (status) where.status = status;
+
+    if (search_text) {
+      where = [
+        {
+          ...where,
+          username: ILike(`%${search_text}%`)
+        },
+        {
+          ...where,
+          email: ILike(`%${search_text}%`)
+        },
+        {
+          ...where,
+          fullName: ILike(`%${search_text}%`)
+        }
+      ];
+    }
 
     const [users, total] = await userRepo.findAndCount({
       where,
