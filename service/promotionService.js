@@ -65,6 +65,8 @@ class PromotionService {
       );
     }
 
+    queryBuilder = queryBuilder.andWhere('promotion.deleted = false');
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [promotions, total] = await queryBuilder
       .orderBy('promotion.createdAt', 'DESC')
@@ -148,8 +150,8 @@ class PromotionService {
   async deletePromotion(id) {
     const promotionRepo = getRepository('Promotion');
     const promotion = await this.getPromotionById(id);
-
-    return await promotionRepo.remove(promotion);
+    promotion.deleted = true;
+    return await promotionRepo.save(promotion);
   }
 
   async updatePromotionStatus(id, status) {
@@ -202,6 +204,7 @@ class PromotionService {
       .andWhere('promotion.start_at <= :now', { now })
       .andWhere('promotion.end_at >= :now', { now })
       .andWhere('promotion.used_count < promotion.usage_limit OR promotion.usage_limit IS NULL')
+      .andWhere('promotion.deleted = false');
 
     if (zoneId) {
     queryBuilder = queryBuilder.andWhere(

@@ -115,7 +115,8 @@ class UserService {
       throw new Error('User not found');
     }
 
-    await userRepo.delete({ id });
+    await userRepo.update({ id }, { deleted: true });
+    
     return user;
   }
 }

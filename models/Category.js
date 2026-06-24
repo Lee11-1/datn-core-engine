@@ -28,6 +28,11 @@ module.exports = new EntitySchema({
       type: 'int',
       default: 0,
     },
+    deleted: {
+      name: 'deleted',
+      type: 'boolean',
+      default: false,
+    },
     isActive: {
       name: 'is_active',
       type: 'boolean',

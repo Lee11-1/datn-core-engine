@@ -25,6 +25,11 @@ module.exports = new EntitySchema({
       length: 255,
       nullable: true,
     },
+      deleted: {
+      name: 'deleted',
+      type: 'boolean',
+      default: false,
+    },
     address: {
       type: 'text',
       nullable: true,

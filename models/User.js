@@ -69,6 +69,11 @@ module.exports = new EntitySchema({
       type: 'timestamptz',
       nullable: true,
     },
+    deleted: {
+      name: 'deleted',
+      type: 'boolean',
+      default: false,
+    },
   },
   relations: {
     manager: {
@@ -92,5 +97,6 @@ module.exports = new EntitySchema({
     { columns: ['role'] },
     { columns: ['managerId'] },
     { columns: ['status'] },
+    { columns: ['deleted'] },
   ],
 });

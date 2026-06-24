@@ -54,7 +54,18 @@ class ComplaintService {
       .createQueryBuilder('complaint')
       .leftJoinAndSelect('complaint.order',    'order')
       .leftJoinAndSelect('complaint.customer', 'customer')
-      .leftJoinAndSelect('complaint.user',     'user');
+      .leftJoin('complaint.user', 'user')
+      .select([
+        'complaint',
+        'order',
+        'customer',
+        'user.id',
+        'user.username',
+        'user.fullName',
+        'user.email',
+        'user.phone',
+        'user.role'
+      ]);
 
     if (status) {
       qb = qb.andWhere('complaint.status = :status', { status });
@@ -128,6 +139,16 @@ class ComplaintService {
     if (resolvedAt !== undefined) complaint.resolvedAt = resolvedAt || null;
 
     return await complaintRepo.save(complaint);
+  }
+
+  async updateComplaintStatus(id, status) {
+    const complaintRepo = getRepository('Complaint');
+    const complaint = await complaintRepo.findOne({ where: { id } });
+    if (!complaint) throw new Error('Complaint not found');
+
+    complaint.status = status;  
+    await complaintRepo.save(complaint);
+    return
   }
 
   async deleteComplaint(id) {

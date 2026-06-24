@@ -63,6 +63,34 @@ class ComplaintController {
     }
   }
 
+  async updateComplaintStatus(ctx) {
+    try {
+      const { id, status } = ctx.request.body;
+
+      if (!id || !status) {
+        ctx.status = 400;
+        ctx.body = {
+          success: false,
+          message: 'Missing id or status in request body',
+        };
+        return;
+      }
+      console.log('Updating complaint status:', { id, status });
+      const result = await complaintService.updateComplaintStatus(id, status);
+        ctx.body = {
+          success: true,
+          message: 'Complaint status updated successfully',
+          data: result,
+        };
+    } catch (error) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   async deleteComplaint(ctx) {
     try {
       const { id } = ctx.params;

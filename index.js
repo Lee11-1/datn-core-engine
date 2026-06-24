@@ -27,11 +27,10 @@ app.use(
 
 app.use(log);
 
-// Initialize TypeORM and bootstrap routes
 async function startServer() {
   try {
     await initializeDatabase();
-    console.log('✅ TypeORM initialized');
+    console.log(' TypeORM initialized');
 
     // Load routes after database is initialized
     glob(`${__dirname}/routes/*.js`, { ignore: "**/index.js" }, (err, matches) => {
@@ -48,12 +47,12 @@ async function startServer() {
       initSocket(httpServer);
       
       httpServer.listen(config.port, () => {
-        console.log(`✅ Server is running on port ${config.port}`);
-        console.log(`✅ Koa (HTTP) and Socket.IO (WebSocket) are sharing the same port.`);
+        console.log(`Server is running on port ${config.port}`);
+        console.log(`Koa (HTTP) and Socket.IO (WebSocket) are sharing the same port.`);
       });
     });
   } catch (err) {
-    console.error('❌ Server startup failed:', err.message);
+    console.error('Server startup failed:', err.message);
     process.exit(1);
   }
 }

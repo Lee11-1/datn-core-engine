@@ -106,7 +106,7 @@ class OrderService {
   }
 
   async getOrders(query) {
-    const { page = 1, limit = 10, userId, customerId, sessionId, status, scheduleId } = query;
+    const { page = 1, limit = 10, userId, customerId, sessionId, status, scheduleId, startDate, endDate } = query;
     const orderRepo = getRepository('Order');
     const queryBuilder = orderRepo
       .createQueryBuilder('order')
@@ -133,6 +133,13 @@ class OrderService {
         .andWhere(
           `order.created_at >= NOW() - INTERVAL '5 months'`
         );
+    }
+
+    if (startDate && endDate) {
+      queryBuilder.andWhere(
+        'order.createdAt >= :startDate AND order.createdAt < :endDate',
+        { startDate, endDate }
+      )
     }
 
     if (sessionId) {
@@ -485,8 +492,9 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
   }
   }
 
-  async getTopRevenueZones(){
+  async getTopRevenueZones(query){
     try {
+      const { startDate, endDate } = query;
       const orderRepo = getRepository('Order');
       const result = await orderRepo
         .createQueryBuilder('order')
@@ -502,6 +510,8 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
         .addSelect('user.fullName', 'userFullName')
         .where('order.status = :status', { status: 'approved' })
         .andWhere('schedule.status = :scheduleStatus', { scheduleStatus: 'ongoing' })
+        .andWhere('order.createdAt >= :startDate', { startDate })
+        .andWhere('order.createdAt <= :endDate', { endDate })
         .groupBy('zone.id')
         .addGroupBy('user.id')
         .addGroupBy('user.fullName')
@@ -518,7 +528,7 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
 
   async getOrderStatistics(query) {
     try {
-     const { zoneId } = query
+     const { zoneId, startDate, endDate } = query
       const orderRepo = getRepository('Order');
 
       const queryBuilder = orderRepo
@@ -563,6 +573,13 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
         })
       }
 
+      if (startDate) {
+        queryBuilder.andWhere('order.createdAt >= :startDate', { startDate });
+      }
+      if (endDate) {
+        queryBuilder.andWhere('order.createdAt <= :endDate', { endDate });
+      }
+
       const data1 = await queryBuilder.getRawOne()
 
       const data2 = await orderRepo
@@ -572,6 +589,8 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
         .where('schedule.status = :scheduleStatus', {
           scheduleStatus: 'ongoing'
         })
+        .andWhere('order.createdAt >= :startDate', { startDate })
+        .andWhere('order.createdAt <= :endDate', { endDate })
         .select("DATE(order.createdAt)", "date")
         .addSelect("COUNT(order.id)", "totalOrders")
         .groupBy("DATE(order.createdAt)")

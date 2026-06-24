@@ -147,17 +147,25 @@ class ScheduleService {
         throw new Error('Schedule not found');
       }
       const customerRepo = getRepository('Customer');
-      const customers = await customerRepo
-        .createQueryBuilder('customer')
-        .leftJoinAndSelect('customer.orders', 'order')
-        .leftJoinAndSelect('order.session', 'session')
-        .where('customer.zone_id = :zoneId', {
-          zoneId: schedule.zoneId,
-        })
-        .andWhere('session.schedule_id = :scheduleId', {
-          scheduleId: schedule.id,
-        })
-        .getMany();
+
+     const customers = await customerRepo
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.orders', 'order')
+      .leftJoinAndSelect('order.session', 'session')
+      .where('customer.zone_id = :zoneId', {
+        zoneId: schedule.zoneId,
+      })
+      .loadRelationCountAndMap(
+        'customer.orderCount',
+        'customer.orders',
+        'countOrder',
+        qb =>
+          qb.innerJoin('countOrder.session', 'countSession')
+            .where('countSession.schedule_id = :scheduleId', {
+              scheduleId: schedule.id,
+            })
+      )
+      .getMany();
 
       return { schedule, customers };
     }
@@ -239,29 +247,30 @@ class ScheduleService {
     if (!schedule) {
       throw new Error('Schedule not found');
     }
-
-    return await scheduleRepo.remove(schedule);
+    schedule.deleted = true;
+    return await scheduleRepo.save(schedule);
   }
 
   async getSchedulesByUser(userId, query = {}) {
-    const { page = 1, limit = 10, status, fromDate, toDate } = query;
+    const { page = 1, limit = 10, status, startDate, endDate } = query;
     const scheduleRepo = getRepository('Schedule');
     const where = { userId };
     if (status) where.status = status;
 
     const queryBuilder = scheduleRepo.createQueryBuilder('schedule')
-      .where('schedule.userId = :userId', { userId });
+      .where('schedule.userId = :userId', { userId })
+      .andWhere('schedule.deleted = false');
 
     if (status) {
       queryBuilder.andWhere('schedule.status = :status', { status });
     }
 
-    if (fromDate) {
-      queryBuilder.andWhere('schedule.scheduledDate >= :fromDate', { fromDate });
+    if (startDate) {
+      queryBuilder.andWhere('schedule.startDate >= :startDate', { startDate });
     }
 
-    if (toDate) {
-      queryBuilder.andWhere('schedule.scheduledDate <= :toDate', { toDate });
+    if (endDate) {
+      queryBuilder.andWhere('schedule.endDate <= :endDate', { endDate });
     }
 
     queryBuilder.leftJoinAndSelect('schedule.user', 'user')
@@ -288,7 +297,8 @@ class ScheduleService {
     const scheduleRepo = getRepository('Schedule');
 
     const queryBuilder = scheduleRepo.createQueryBuilder('schedule')
-      .where('schedule.zoneId = :zoneId', { zoneId });
+      .where('schedule.zoneId = :zoneId', { zoneId })
+      .andWhere('schedule.deleted = false');
 
     if (status) {
       queryBuilder.andWhere('schedule.status = :status', { status });
@@ -301,6 +311,7 @@ class ScheduleService {
     if (toDate) {
       queryBuilder.andWhere('schedule.scheduledDate <= :toDate', { toDate });
     }
+    
 
     queryBuilder.leftJoinAndSelect('schedule.user', 'user')
       .leftJoinAndSelect('schedule.zone', 'zone')

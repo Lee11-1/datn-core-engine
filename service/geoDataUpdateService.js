@@ -42,8 +42,18 @@ class GeoDataUpdateService {
     const { page = 1, limit = 10, source, status = 'all', search } = query;
     const geoUpdateRepo = getRepository('GeoDataUpdate');
 
-    let queryBuilder = geoUpdateRepo.createQueryBuilder('update')
-      .leftJoinAndSelect('update.triggeredByUser', 'user');
+   let queryBuilder = geoUpdateRepo
+      .createQueryBuilder('update')
+      .leftJoin('update.triggeredByUser', 'user')
+      .select([
+        'update',
+        'user.id',
+        'user.username',
+        'user.fullName',
+        'user.email',
+        'user.phone',
+        'user.role'
+      ]);
 
     if (source) {
       queryBuilder = queryBuilder.where('update.source = :source', { source });

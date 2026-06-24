@@ -56,7 +56,12 @@ module.exports = new EntitySchema({
     title: {
       type: 'text',
       nullable: true,
-    }
+    },
+     deleted: {
+      name: 'deleted',
+      type: 'boolean',
+      default: false,
+    },
   },
   relations: {
     user: {

@@ -195,7 +195,7 @@ class OrderController {
 
    async getTopRevenueZones(ctx){
     try {
-      const result = await orderService.getTopRevenueZones(); 
+      const result = await orderService.getTopRevenueZones(ctx.request.query); 
       ctx.body = {
         success: true,
         data: result
