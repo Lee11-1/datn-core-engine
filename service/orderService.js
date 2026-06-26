@@ -83,6 +83,23 @@ class OrderService {
         }))
       );
 
+   const values = items
+      .map(
+        i =>
+          `('${i.productId}'::uuid, '${i.warehouseId}'::uuid, ${i.quantity})`
+      )
+      .join(',');
+
+      await queryRunner.query(`
+        UPDATE inventory i
+        SET reserved_qty = i.reserved_qty + v.quantity
+        FROM (
+            VALUES ${values}
+        ) AS v(product_id, warehouse_id, quantity)
+        WHERE i.product_id = v.product_id
+          AND i.warehouse_id = v.warehouse_id;
+        `);
+
       if (promotionId) {
         await queryRunner.manager
           .createQueryBuilder()
@@ -203,6 +220,22 @@ class OrderService {
           END
         )
       `, 'pendingOrders')
+          .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'fail' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'failOrders')
+          .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'success' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'successOrders')
       .groupBy('customer.id')
       .getRawMany();
 
@@ -224,12 +257,13 @@ class OrderService {
   }
 
   async getOrdersByUser(userId, queryParams = {}) {
-    const { page = 1, limit = 10 } = queryParams;
+    const { page = 1, limit = 10, status } = queryParams;
     const orderRepo = getRepository('Order');
 
     const [orders, total] = await orderRepo.createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
       .where('order.userId = :userId', { userId })
+      .andWhere('order.status = :status', { status: status || 'approved' })
       .take(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .orderBy('order.createdAt', 'DESC')
@@ -308,37 +342,75 @@ async getOrderItems(orderId){
 }
 
   async updateOrderStatus(orderId, data) {
-    const { status, rejectReason, rejectNote, approvedBy, note } = data;
+    const { status, rejectReason, rejectNote, approvedBy, note, failReason } = data;
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const orderRepo = getRepository('Order');
-    const order = await orderRepo.findOne({ where: { id: orderId } });
+    try{
+      const orderRepo = queryRunner.manager.getRepository('Order');
 
-    if (!order) {
-      throw new Error('Order not found');
+      const order = await orderRepo.findOne({ where: { id: orderId }, relations: ['items'] });
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      if (status) {
+        order.status = status;
+      }
+
+      if (status === 'approved') {
+        order.approvedAt = new Date();
+        order.approvedBy = approvedBy || null;
+      }
+
+      if (status === 'rejected') {
+        order.rejectReason = rejectReason || null;
+        order.rejectNote = rejectNote || null;
+        order.autoRejected = true;
+      }
+
+      if (note) {
+        order.note = note;
+      }
+
+      if (failReason) {
+        order.failReason = failReason;
+      }
+
+      if (status === 'fail') {
+        const inventoryRepo = queryRunner.manager.getRepository('Inventory');
+        const orderItems = order.items;
+        const values = orderItems
+          .map(
+            i =>
+              `('${i.productId}'::uuid, '${i.warehouseId}'::uuid, ${i.quantity})`
+          )
+          .join(',');
+
+        await queryRunner.query(`
+          UPDATE inventory i
+          SET quantity = i.quantity + v.quantity
+          FROM (
+              VALUES ${values}
+          ) AS v(product_id, warehouse_id, quantity)
+          WHERE i.product_id = v.product_id
+            AND i.warehouse_id = v.warehouse_id;
+          `);
+      }
+      const savedOrder = await orderRepo.save(order);
+      await queryRunner.commitTransaction();
+
+      return savedOrder;
     }
-
-    if (status) {
-      order.status = status;
+    catch( error ){
+      await queryRunner.rollbackTransaction();
+      throw error;
     }
-
-    if (status === 'approved') {
-      order.approvedAt = new Date();
-      order.approvedBy = approvedBy || null;
+    finally {
+      await queryRunner.release();
     }
-
-    if (status === 'rejected') {
-      order.rejectReason = rejectReason || null;
-      order.rejectNote = rejectNote || null;
-      order.autoRejected = true;
-    }
-
-    if (note) {
-      order.note = note;
-    }
-
-    const updatedOrder = await orderRepo.save(order);
-
-    return updatedOrder;
+    
   }
 
   async generateOrderCode() {
@@ -360,7 +432,7 @@ async getOrderItems(orderId){
  
 async getTopCustomersOrderByZone(zoneId, query = {}) {
   try {
-    const { startDate, endDate, status = 'approved', scheduleId } = query;
+    const { startDate, endDate, status = 'success', scheduleId } = query;
 
     const orderRepo = getRepository('Order');
 
@@ -438,7 +510,7 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
     const orderRepo = queryRunner.manager.getRepository('Order');
     const order = await orderRepo.findOne({ where: { id: orderId } });
 
-    if (!order) {
+    if (!order || order.status !== 'pending') {
       throw new Error('Order not found');
     }
       order.status = 'approved';
@@ -460,8 +532,7 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
       const { id, ...data } = updateData;
 
       const inventory = await inventoryRepository.findOne({
-        where: { id },
-        relations: ['product', 'warehouse'],
+        where: { id }
       });
 
       if (!inventory) {
@@ -469,6 +540,7 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
       }
 
       inventory.quantity = data.quantity;
+      inventory.reservedQty = data.reservedQty;
 
       const updated = await inventoryRepository.save(inventory);
 
@@ -508,8 +580,7 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
         .addSelect('user.id', 'userId')
         .addSelect('user.phone', 'userPhone')
         .addSelect('user.fullName', 'userFullName')
-        .where('order.status = :status', { status: 'approved' })
-        .andWhere('schedule.status = :scheduleStatus', { scheduleStatus: 'ongoing' })
+        .where('order.status = :status', { status: 'success' })
         .andWhere('order.createdAt >= :startDate', { startDate })
         .andWhere('order.createdAt <= :endDate', { endDate })
         .groupBy('zone.id')
@@ -566,6 +637,22 @@ async getTopCustomersOrderByZone(zoneId, query = {}) {
             END
           )
         `, 'pendingOrders')
+          .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'fail' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'failOrders')
+          .addSelect(`
+          SUM(
+            CASE
+              WHEN order.status = 'success' THEN 1
+              ELSE 0
+            END
+          )
+        `, 'successOrders')
 
       if (zoneId) {
         queryBuilder.andWhere('schedule.zoneId = :zoneId', {

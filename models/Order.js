@@ -85,6 +85,11 @@ module.exports = new EntitySchema({
       type: 'text',
       nullable: true,
     },
+    failReason: {
+      name: 'fail_reason',
+      type: 'text',
+      nullable: true,
+    },
     autoRejected: {
       name: 'auto_rejected',
       type: 'boolean',

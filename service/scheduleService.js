@@ -166,8 +166,11 @@ class ScheduleService {
             })
       )
       .getMany();
-
-      return { schedule, customers };
+      const sellingSessionRepo = getRepository('SellingSession');
+      const sessions = await sellingSessionRepo.find({
+        where: { scheduleId: schedule.id },
+      });
+      return { schedule, customers, sessions };
     }
 
   async updateSchedule(id, updates) {
